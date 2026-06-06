@@ -5,6 +5,7 @@ import { onBeforeUnmount, shallowRef, watch } from 'vue'
 export interface SchemaEditorState {
   schema: ShallowRef<PageSchema>
   source: ShallowRef<string>
+  syncSchemaSource: (schema: PageSchema) => void
 }
 
 /**
@@ -17,6 +18,7 @@ export function useSchemaEditor(initialSchema: PageSchema): SchemaEditorState {
   const source = shallowRef(JSON.stringify(initialSchema, null, 2))
   const schema = shallowRef<PageSchema>(initialSchema)
   let parseTimer: ReturnType<typeof setTimeout> | undefined
+  let syncingSchema = false
 
   /**
    * 解析编辑器 JSON 并更新有效 Schema。
@@ -32,10 +34,32 @@ export function useSchemaEditor(initialSchema: PageSchema): SchemaEditorState {
     }
   }
 
-  watch(source, (value) => {
-    clearTimeout(parseTimer)
-    parseTimer = setTimeout(parseSchema, 180, value)
-  })
+  /**
+   * 将外部 Schema 同步到编辑器。
+   *
+   * @param nextSchema 最新页面 Schema。
+   */
+  function syncSchemaSource(nextSchema: PageSchema): void {
+    schema.value = nextSchema
+    syncingSchema = true
+    source.value = JSON.stringify(nextSchema, null, 2)
+    syncingSchema = false
+  }
+
+  watch(
+    source,
+    (value) => {
+      if (syncingSchema) {
+        return
+      }
+
+      clearTimeout(parseTimer)
+      parseTimer = setTimeout(parseSchema, 180, value)
+    },
+    {
+      flush: 'sync',
+    },
+  )
 
   onBeforeUnmount(() => {
     clearTimeout(parseTimer)
@@ -44,5 +68,6 @@ export function useSchemaEditor(initialSchema: PageSchema): SchemaEditorState {
   return {
     schema,
     source,
+    syncSchemaSource,
   }
 }
