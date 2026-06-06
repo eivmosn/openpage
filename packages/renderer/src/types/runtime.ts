@@ -19,6 +19,7 @@ export interface RendererContext {
   state: Record<string, unknown>
   adapter: UiAdapter
   platform: RendererPlatform
+  notifyStateChange: () => void
   eventHandlers: Map<string, Map<string, RendererEventHandler>>
   nodePatches: Record<string, RuntimeNodePatch | undefined>
 }

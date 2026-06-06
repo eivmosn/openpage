@@ -1,11 +1,14 @@
 import type { CompiledNode } from '../types/compiled'
 import type { RendererContext, RuntimeNodePatch } from '../types/runtime'
-import type { EventSchema } from '../types/schema'
+import type { EventSchema, StaticEventActionSchema } from '../types/schema'
+import type { ValueRuntimeHelpers } from './helpers'
 import { getCachedValue } from '../utils/cache'
 import { getByPath, setByPath } from '../utils/path'
+import { evaluateValue } from './expression'
+import { valueRuntimeHelpers } from './helpers'
 import { getNodeById, getNodeByName, updateNodeById, updateNodeByName } from './nodes'
 
-export interface EventRuntimeHelpers {
+export interface EventRuntimeHelpers extends ValueRuntimeHelpers {
   $event: unknown
   event: unknown
   getNodeById: (id: string) => CompiledNode | undefined
@@ -34,7 +37,41 @@ export async function runActions(event: EventSchema | undefined, context: Render
     return
   }
 
-  await runScriptEvent(event, context, payload)
+  if (Array.isArray(event)) {
+    for (const action of event) {
+      await runActions(action, context, payload)
+    }
+    return
+  }
+
+  if (typeof event === 'string') {
+    await runScriptEvent(event, context, payload)
+    return
+  }
+
+  if (event.type === 'static') {
+    runStaticEvent(event, context, payload)
+  }
+}
+
+/**
+ * 执行静态选项字段联动动作。
+ *
+ * @param action 静态字段联动动作配置。
+ * @param context 当前渲染器运行时上下文。
+ * @param payload 当前选中的完整选项。
+ */
+function runStaticEvent(action: StaticEventActionSchema, context: RendererContext, payload?: unknown): void {
+  const scope = {
+    $event: payload,
+    event: payload,
+  }
+
+  for (const [path, value] of Object.entries(action.dependency)) {
+    setByPath(context.state, path, evaluateValue(value, context, scope))
+  }
+
+  context.notifyStateChange()
 }
 
 /**
@@ -48,7 +85,12 @@ async function runScriptEvent(script: string, context: RendererContext, payload?
   const helpers = createEventHelpers(context, payload)
 
   const runScript = getCachedValue(scriptCache, script, () => compileScript(script))
-  await runScript(context.state, helpers)
+  try {
+    await runScript(context.state, helpers)
+  }
+  finally {
+    context.notifyStateChange()
+  }
 }
 
 /**
@@ -75,13 +117,17 @@ function compileScript(script: string): ScriptRunner {
  */
 function createEventHelpers(context: RendererContext, payload?: unknown): EventRuntimeHelpers {
   return {
+    ...valueRuntimeHelpers,
     $event: payload,
     event: payload,
     getNodeById: (id: string) => getNodeById(context, id),
     getNodeByName: (name: string) => getNodeByName(context, name),
     getState: (path: string) => getByPath(context.state, path),
     message: context.platform.message || {},
-    setState: (path: string, value: unknown) => setByPath(context.state, path, value),
+    setState: (path: string, value: unknown) => {
+      setByPath(context.state, path, value)
+      context.notifyStateChange()
+    },
     submitForm: (name: string) => submitNamedForm(context, name),
     updateNodeById: (id: string, patch: RuntimeNodePatch) => updateNodeById(context, id, patch),
     updateNodeByName: (name: string, patch: RuntimeNodePatch) => updateNodeByName(context, name, patch),

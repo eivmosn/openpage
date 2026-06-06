@@ -7,6 +7,7 @@ import { useFormField } from '../composables/useFormField'
 defineOptions({ name: 'OpenPageNaiveInputNumber' })
 const props = defineProps<UiNodeProps>()
 const field = useFormField(props)
+const readonly = computed(() => props.node.computedValue !== undefined || props.node.props.readonly === true)
 const value = computed(resolveValue)
 
 /**
@@ -15,7 +16,11 @@ const value = computed(resolveValue)
  * @returns 返回数字值或空值。
  */
 function resolveValue(): number | null {
-  return typeof field.rawValue.value === 'number' ? field.rawValue.value : null
+  const currentValue = props.node.computedValue !== undefined
+    ? props.node.computedValue
+    : field.rawValue.value
+
+  return typeof currentValue === 'number' ? currentValue : null
 }
 
 /**
@@ -33,6 +38,7 @@ async function handleUpdateValue(nextValue: number | null): Promise<void> {
   <NInputNumber
     v-bind="props.node.props"
     :disabled="field.disabled.value"
+    :readonly="readonly"
     :value="value"
     @update:value="handleUpdateValue"
   />

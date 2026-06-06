@@ -1,7 +1,6 @@
 export interface PageSchema {
   id: string
   title?: string
-  state?: Record<string, unknown>
   children: NodeSchema[]
 }
 
@@ -14,6 +13,7 @@ export interface NodeSchema {
   disabled?: unknown
   required?: unknown
   defaultValue?: unknown
+  computedValue?: unknown
   props?: Record<string, unknown>
   children?: NodeSchema[]
   events?: Record<string, EventSchema>
@@ -22,4 +22,11 @@ export interface NodeSchema {
   }
 }
 
-export type EventSchema = string
+export interface StaticEventActionSchema {
+  type: 'static'
+  dependency: Record<string, unknown>
+}
+
+export type EventActionSchema = StaticEventActionSchema
+
+export type EventSchema = string | EventActionSchema | EventSchema[]

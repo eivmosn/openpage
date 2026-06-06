@@ -1,8 +1,14 @@
 import type { RendererContext } from '../types/runtime'
+import type { ValueRuntimeHelpers } from './helpers'
 import { getCachedValue } from '../utils/cache'
 import { setByPath } from '../utils/path'
+import { valueRuntimeHelpers } from './helpers'
 
-type ExpressionRunner = (state: Record<string, unknown>) => unknown
+type ExpressionRunner = (
+  state: Record<string, unknown>,
+  helpers: ValueRuntimeHelpers,
+  scope: Record<string, unknown>,
+) => unknown
 
 const expressionCache = new Map<string, ExpressionRunner>()
 
@@ -42,19 +48,24 @@ export function parseTemplateExpression(value: string): string | undefined {
  *
  * @param value 需要计算的配置值。
  * @param context 当前渲染器运行时上下文。
+ * @param scope 当前表达式的局部变量。
  * @returns 返回计算后的配置值。
  */
-export function evaluateValue(value: unknown, context: RendererContext): unknown {
+export function evaluateValue(
+  value: unknown,
+  context: RendererContext,
+  scope: Record<string, unknown> = {},
+): unknown {
   if (isTemplateExpression(value)) {
-    return evaluateExpression(value, context)
+    return evaluateExpression(value, context, scope)
   }
 
   if (Array.isArray(value)) {
-    return value.map(item => evaluateValue(item, context))
+    return value.map(item => evaluateValue(item, context, scope))
   }
 
   if (isPlainRecord(value)) {
-    return evaluateRecord(value, context)
+    return evaluateRecord(value, context, scope)
   }
 
   return value
@@ -65,11 +76,16 @@ export function evaluateValue(value: unknown, context: RendererContext): unknown
  *
  * @param record 需要计算的对象配置。
  * @param context 当前渲染器运行时上下文。
+ * @param scope 当前表达式的局部变量。
  * @returns 返回计算后的对象配置。
  */
-export function evaluateRecord(record: Record<string, unknown>, context: RendererContext): Record<string, unknown> {
+export function evaluateRecord(
+  record: Record<string, unknown>,
+  context: RendererContext,
+  scope: Record<string, unknown> = {},
+): Record<string, unknown> {
   return Object.fromEntries(
-    Object.entries(record).map(([key, value]) => [key, evaluateValue(value, context)]),
+    Object.entries(record).map(([key, value]) => [key, evaluateValue(value, context, scope)]),
   )
 }
 
@@ -87,6 +103,8 @@ export function runSetters(setters: Record<string, unknown> | undefined, context
   for (const [path, value] of Object.entries(setters)) {
     setByPath(context.state, path, evaluateValue(value, context))
   }
+
+  context.notifyStateChange()
 }
 
 /**
@@ -94,9 +112,14 @@ export function runSetters(setters: Record<string, unknown> | undefined, context
  *
  * @param value 模板表达式字符串。
  * @param context 当前渲染器运行时上下文。
+ * @param scope 当前表达式的局部变量。
  * @returns 返回表达式计算结果。
  */
-function evaluateExpression(value: string, context: RendererContext): unknown {
+function evaluateExpression(
+  value: string,
+  context: RendererContext,
+  scope: Record<string, unknown>,
+): unknown {
   const expression = parseTemplateExpression(value)
 
   if (!expression) {
@@ -104,7 +127,7 @@ function evaluateExpression(value: string, context: RendererContext): unknown {
   }
 
   const runExpression = getCachedValue(expressionCache, expression, () => compileExpression(expression))
-  return runExpression(context.state)
+  return runExpression(context.state, valueRuntimeHelpers, scope)
 }
 
 /**
@@ -115,7 +138,12 @@ function evaluateExpression(value: string, context: RendererContext): unknown {
  */
 function compileExpression(expression: string): ExpressionRunner {
   // eslint-disable-next-line no-new-func
-  return new Function('state', `with (state) { return (${expression}) }`) as ExpressionRunner
+  return new Function(
+    'state',
+    'helpers',
+    'scope',
+    `with (state) { with (helpers) { with (scope) { return (${expression}) } } }`,
+  ) as ExpressionRunner
 }
 
 /**

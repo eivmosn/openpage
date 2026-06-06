@@ -39,7 +39,6 @@ export function compileSchema(schema: PageSchema): CompiledPage {
     id: schema.id,
     title: schema.title,
     children,
-    state: markRaw(schema.state || {}),
     nodes: markRaw(nodes),
     nodeNames: markRaw(nodeNames),
   })
@@ -92,6 +91,7 @@ function compileNode(
     disabled: node.disabled,
     required: node.required,
     defaultValue: node.defaultValue,
+    computedValue: node.computedValue,
     props: markRaw(node.props || {}),
     children,
     events: markRaw(node.events || {}),

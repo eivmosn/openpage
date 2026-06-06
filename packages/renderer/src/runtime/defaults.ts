@@ -9,8 +9,14 @@ import { evaluateValue } from './expression'
  * @param context 当前渲染器运行时上下文。
  */
 export function applyNodeDefaultValues(context: RendererContext): void {
+  let changed = false
+
   for (const node of context.compiled.nodes.values()) {
-    applyNodeDefaultValue(context, node)
+    changed = applyNodeDefaultValue(context, node) || changed
+  }
+
+  if (changed) {
+    context.notifyStateChange()
   }
 }
 
@@ -19,17 +25,19 @@ export function applyNodeDefaultValues(context: RendererContext): void {
  *
  * @param context 当前渲染器运行时上下文。
  * @param node 当前编译节点。
+ * @returns 返回是否写入了默认值。
  */
-function applyNodeDefaultValue(context: RendererContext, node: CompiledNode): void {
+function applyNodeDefaultValue(context: RendererContext, node: CompiledNode): boolean {
   if (!node.model || node.defaultValue === undefined) {
-    return
+    return false
   }
 
   if (!isEmptyDefaultTarget(getByPath(context.state, node.model.path))) {
-    return
+    return false
   }
 
   setByPath(context.state, node.model.path, evaluateValue(node.defaultValue, context))
+  return true
 }
 
 /**

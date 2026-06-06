@@ -2,11 +2,10 @@ import type { PropType } from 'vue'
 import type { UiAdapter } from '../adapters/types'
 import type { RendererContext, RendererPlatform } from '../types/runtime'
 import type { PageSchema } from '../types/schema'
-import { computed, defineComponent, h, markRaw, reactive } from 'vue'
+import { computed, defineComponent, h, markRaw, shallowRef, toRaw, watch } from 'vue'
 import { compileSchema } from '../compiler/compileSchema'
 import { usePageInteractionStyles } from '../interactions/usePageInteractionStyles'
-import { createReactiveState } from '../runtime/context'
-import { applyNodeDefaultValues } from '../runtime/defaults'
+import { createRendererContext, updateRendererSchema, updateRendererState } from '../runtime/context'
 import { NodeRenderer } from './NodeRenderer'
 import { Provider } from './Provider'
 
@@ -14,10 +13,17 @@ const missingAdapterMessage = 'OpenPage Renderer 渲染失败：未配置 UI Ada
 
 export const Renderer = defineComponent({
   name: 'OpenPageRenderer',
+  emits: {
+    'update:state': (_state: Record<string, unknown>) => true,
+  },
   props: {
     schema: {
       type: Object as PropType<PageSchema>,
       required: true,
+    },
+    state: {
+      type: Object as PropType<Record<string, unknown>>,
+      default: () => ({}),
     },
     adapter: {
       type: Object as PropType<UiAdapter>,
@@ -28,28 +34,53 @@ export const Renderer = defineComponent({
       default: () => ({}),
     },
   },
-  setup(props) {
+  setup(props, { emit }) {
     const schema = computed(() => props.schema)
     const compiled = computed(() => markRaw(compileSchema(schema.value)))
 
     usePageInteractionStyles(schema)
 
-    const context = computed<RendererContext | undefined>(() => {
-      if (!props.adapter)
-        return undefined
+    const context = shallowRef<RendererContext>()
 
-      const runtimeContext: RendererContext = {
-        compiled: compiled.value,
-        state: createReactiveState(compiled.value.state),
-        adapter: props.adapter,
-        platform: props.platform,
-        eventHandlers: markRaw(new Map()),
-        nodePatches: reactive({}),
+    /**
+     * 将当前运行时状态同步给外部受控状态。
+     */
+    function notifyStateChange(): void {
+      emit('update:state', toRaw(context.value?.state || props.state))
+    }
+
+    watch(() => props.adapter, (adapter) => {
+      if (!adapter) {
+        context.value = undefined
+        return
       }
 
-      applyNodeDefaultValues(runtimeContext)
+      if (!context.value) {
+        context.value = createRendererContext(compiled.value, props.state, adapter, props.platform, notifyStateChange)
+        return
+      }
 
-      return runtimeContext
+      context.value.adapter = adapter
+    }, {
+      immediate: true,
+    })
+
+    watch(compiled, (latestCompiled) => {
+      if (context.value) {
+        updateRendererSchema(context.value, latestCompiled)
+      }
+    })
+
+    watch(() => props.state, (state) => {
+      if (context.value) {
+        updateRendererState(context.value, state)
+      }
+    })
+
+    watch(() => props.platform, (platform) => {
+      if (context.value) {
+        context.value.platform = platform
+      }
     })
 
     return () => {

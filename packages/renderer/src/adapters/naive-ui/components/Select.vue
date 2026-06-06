@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { SelectOption } from 'naive-ui'
 import type { UiNodeProps } from '../../types'
 import { NSelect } from 'naive-ui'
 import { computed } from 'vue'
@@ -33,8 +34,19 @@ function resolveSelectedValue(): SelectValue {
  */
 async function handleUpdateValue(nextValue: string | number | null): Promise<void> {
   const modelValue = toBusinessSelectValue(nextValue)
+  const selectedOption = resolveSelectedOption(modelValue)
   props.updateModelValue(modelValue)
-  await props.emitNodeEvent('onchange', modelValue)
+  await props.emitNodeEvent('onchange', selectedOption)
+}
+
+/**
+ * 根据选择值获取完整静态选项。
+ *
+ * @param value 当前选择器业务值。
+ * @returns 返回匹配的完整选项，清空或未匹配时返回 undefined。
+ */
+function resolveSelectedOption(value: unknown): SelectOption | undefined {
+  return options.value.find(option => option.value === value)
 }
 </script>
 

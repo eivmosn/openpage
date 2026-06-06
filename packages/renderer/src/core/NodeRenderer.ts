@@ -37,6 +37,7 @@ export const NodeRenderer = defineComponent({
       disabled: evaluateValue(runtimeNode.value.disabled, context),
       required: evaluateValue(runtimeNode.value.required, context),
       defaultValue: evaluateValue(runtimeNode.value.defaultValue, context),
+      computedValue: evaluateValue(runtimeNode.value.computedValue, context),
       props: evaluateNodeProps(runtimeNode.value),
     }))
 

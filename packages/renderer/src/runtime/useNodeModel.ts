@@ -36,6 +36,7 @@ export function useNodeModel(node: ComputedRef<CompiledNode>, context: RendererC
     }
 
     setByPath(context.state, node.value.model.path, nextValue)
+    context.notifyStateChange()
   }
 
   return {
