@@ -101,7 +101,7 @@ const { isResizing, leftPanelStyle, startResize } = useResizableSplit(splitConta
   min-height: 0;
 }
 
-:open-shell {
+.open-shell {
   padding: 10px;
 }
 </style>
