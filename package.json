@@ -1,0 +1,47 @@
+{
+  "name": "openpage",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "pnpm@10.34.1",
+  "description": "Low-code JSON schema page renderer monorepo.",
+  "author": "",
+  "license": "ISC",
+  "keywords": [],
+  "engines": {
+    "node": ">=24.14.1 <25",
+    "pnpm": ">=10"
+  },
+  "scripts": {
+    "build": "pnpm -r build",
+    "build:playground": "pnpm --filter @openpage/playground build",
+    "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s",
+    "dev": "pnpm --filter @openpage/playground dev",
+    "lint": "eslint",
+    "lint:fix": "eslint --fix",
+    "prepare": "simple-git-hooks",
+    "preinstall": "only-allow pnpm",
+    "precommit": "nano-staged",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "catalog:",
+    "@types/node": "catalog:",
+    "@vitejs/plugin-vue": "catalog:",
+    "conventional-changelog": "catalog:",
+    "conventional-changelog-angular": "catalog:",
+    "eslint": "catalog:",
+    "jiti": "catalog:",
+    "nano-staged": "catalog:",
+    "only-allow": "catalog:",
+    "simple-git-hooks": "catalog:",
+    "tsdown": "catalog:",
+    "typescript": "catalog:",
+    "vue": "catalog:"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "pnpm precommit"
+  },
+  "nano-staged": {
+    "*.{js,jsx,ts,tsx,vue,json,jsonc}": "eslint --fix"
+  }
+}
