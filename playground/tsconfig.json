@@ -1,6 +1,7 @@
 {
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
+    "tsBuildInfoFile": "../.cache/tsbuildinfo/playground.tsbuildinfo",
     "paths": {
       "@openpage/renderer": ["../packages/renderer/src/index.ts"]
     },

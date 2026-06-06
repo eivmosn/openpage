@@ -2,6 +2,7 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "composite": true,
+    "tsBuildInfoFile": "../../.cache/tsbuildinfo/editor.tsbuildinfo",
     "paths": {
       "@openpage/renderer": [
         "../renderer/src/index.ts"

@@ -2,7 +2,7 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "composite": true,
-    "tsBuildInfoFile": "./.tsbuildinfo",
+    "tsBuildInfoFile": "../../.cache/tsbuildinfo/renderer.tsbuildinfo",
     "types": ["node", "naive-ui/volar"],
     "declaration": true,
     "declarationMap": false,
