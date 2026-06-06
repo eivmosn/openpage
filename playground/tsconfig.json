@@ -1,0 +1,15 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "paths": {
+      "@openpage/renderer": ["../packages/renderer/src/index.ts"]
+    },
+    "types": ["node", "naive-ui/volar"]
+  },
+  "include": [
+    "vite.config.ts",
+    "src/**/*.ts",
+    "src/**/*.vue",
+    "../env.d.ts"
+  ]
+}
