@@ -5,12 +5,12 @@
 html,
 body,
 #app {
-  min-height: 100vh;
+  height: 100%;
   margin: 0;
 }
 
 #app {
-  min-height: 100vh;
+  height: 100%;
 }
 
 body {
@@ -29,8 +29,97 @@ body {
     sans-serif;
   color: #18181b;
 }
-
-
 .openpage-shell {
-  padding: 7rem;
+  min-width: 780px;
+  padding: 4rem;
+}
+
+
+.el-scrollbar {
+  --el-scrollbar-opacity: 0.3;
+  --el-scrollbar-bg-color: var(--el-text-color-secondary, #909399);
+  --el-scrollbar-hover-opacity: 0.5;
+  --el-scrollbar-hover-bg-color: var(--el-text-color-secondary, #909399);
+  --el-transition-duration: 0.3s;
+  --el-scrollbar-size: 6px;
+  --el-scrollbar-border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+  height: 100%;
+}
+
+.el-scrollbar__wrap {
+  overflow: auto;
+  height: 100%;
+}
+
+.el-scrollbar__wrap--hidden-default {
+  scrollbar-width: none;
+}
+
+.el-scrollbar__wrap--hidden-default::-webkit-scrollbar {
+  display: none;
+}
+
+.el-scrollbar__view {
+  display: block;
+}
+
+.el-scrollbar__thumb {
+  position: relative;
+  display: block;
+  width: 0;
+  height: 0;
+  cursor: pointer;
+  border-radius: inherit;
+  background-color: var(--el-scrollbar-bg-color, var(--el-text-color-secondary, #909399));
+  transition: background-color var(--el-transition-duration, 0.3s);
+  opacity: var(--el-scrollbar-opacity, 0.3);
+}
+
+.el-scrollbar__thumb:hover {
+  background-color: var(
+    --el-scrollbar-hover-bg-color,
+    var(--el-text-color-secondary, #909399)
+  );
+  opacity: var(--el-scrollbar-hover-opacity, 0.5);
+}
+
+.el-scrollbar__bar {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  z-index: 1;
+  border-radius: var(--el-scrollbar-border-radius);
+}
+
+.el-scrollbar__bar.is-vertical {
+  top: 2px;
+  width: var(--el-scrollbar-size);
+}
+
+.el-scrollbar__bar.is-vertical > div {
+  width: 100%;
+}
+
+.el-scrollbar__bar.is-horizontal {
+  left: 2px;
+  height: var(--el-scrollbar-size);
+}
+
+.el-scrollbar__bar.is-horizontal > div {
+  height: 100%;
+}
+
+.el-scrollbar-fade-enter-active {
+  transition: opacity 340ms ease-out;
+}
+
+.el-scrollbar-fade-leave-active {
+  transition: opacity 120ms ease-out;
+}
+
+.el-scrollbar-fade-enter-from,
+.el-scrollbar-fade-leave-active {
+  opacity: 0;
 }

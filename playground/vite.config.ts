@@ -4,7 +4,7 @@ import { defineConfig } from 'vite'
 
 export default defineConfig({
   build: {
-    chunkSizeWarningLimit: 800,
+    chunkSizeWarningLimit: 1600,
   },
   plugins: [vue()],
   resolve: {

@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@openpage/renderer": "workspace:*",
+    "modern-monaco": "catalog:",
     "naive-ui": "catalog:",
     "vue": "catalog:"
   },
