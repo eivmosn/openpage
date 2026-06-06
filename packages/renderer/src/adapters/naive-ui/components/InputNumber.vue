@@ -16,11 +16,7 @@ const value = computed(resolveValue)
  * @returns 返回数字值或空值。
  */
 function resolveValue(): number | null {
-  const currentValue = props.node.computedValue !== undefined
-    ? props.node.computedValue
-    : field.rawValue.value
-
-  return typeof currentValue === 'number' ? currentValue : null
+  return typeof field.rawValue.value === 'number' ? field.rawValue.value : null
 }
 
 /**

@@ -5,6 +5,7 @@ import type { PageSchema } from '../types/schema'
 import { computed, defineComponent, h, markRaw, shallowRef, toRaw, watch } from 'vue'
 import { compileSchema } from '../compiler/compileSchema'
 import { usePageInteractionStyles } from '../interactions/usePageInteractionStyles'
+import { useComputedValues } from '../runtime/computedValue'
 import { createRendererContext, updateRendererSchema, updateRendererState } from '../runtime/context'
 import { NodeRenderer } from './NodeRenderer'
 import { Provider } from './Provider'
@@ -41,6 +42,7 @@ export const Renderer = defineComponent({
     usePageInteractionStyles(schema)
 
     const context = shallowRef<RendererContext>()
+    useComputedValues(context)
 
     /**
      * 将当前运行时状态同步给外部受控状态。
