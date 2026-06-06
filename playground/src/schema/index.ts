@@ -6,34 +6,6 @@ import { preferenceSection } from './sections/preference'
 export const testSchema: PageSchema = {
   id: 'component-test-page',
   title: '复杂表单组件测试',
-  state: {
-    form: {
-      account: '',
-      admin: false,
-      agreement: false,
-      birthday: '',
-      channels: [],
-      color: '#18a058',
-      description: '',
-      email: '',
-      loginAt: '',
-      mention: '',
-      mode: '',
-      otp: [],
-      password: '',
-      phone: '',
-      progress: 35,
-      qrCode: 'https://www.naiveui.com/',
-      rating: 3,
-      role: '',
-      tags: ['OpenPage', 'Vue'],
-      team: null,
-      tenant: '',
-      time: null,
-      username: '',
-      years: 3,
-    },
-  },
   children: [
     {
       id: 'page-layout',
@@ -47,7 +19,6 @@ export const testSchema: PageSchema = {
               margin: '0 auto',
               maxWidth: '1180px',
             },
-            debug: true,
           },
           children: [
             {
@@ -134,4 +105,35 @@ export const testSchema: PageSchema = {
       ],
     },
   ],
+}
+
+export const testState: Record<string, unknown> = {
+  form: {
+    account: '',
+    admin: false,
+    agreement: false,
+    birthday: '',
+    channels: [],
+    color: '#18a058',
+    description: '',
+    departmentId: '',
+    email: '',
+    employeeId: '',
+    loginAt: '',
+    mention: '',
+    mode: '',
+    otp: [],
+    password: '',
+    phone: '',
+    progress: 35,
+    qrCode: 'https://www.naiveui.com/',
+    rating: 3,
+    role: '',
+    tags: ['OpenPage', 'Vue'],
+    team: null,
+    tenant: '',
+    time: null,
+    username: '',
+    years: 3,
+  },
 }

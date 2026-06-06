@@ -53,6 +53,34 @@ export const basicSection: NodeSchema = {
           },
         },
         {
+          id: 'total',
+          type: 'inputNumber',
+          name: 'total',
+          label: '总金额',
+          computedValue: '{{ sum(form.a, form.b) }}',
+          props: {
+            placeholder: '自动计算 A收款 + B收款',
+          },
+        },
+        {
+          id: 'a',
+          type: 'inputNumber',
+          name: 'a',
+          label: 'A收款',
+          props: {
+            placeholder: '请输入 A收款',
+          },
+        },
+        {
+          id: 'b',
+          type: 'inputNumber',
+          name: 'b',
+          label: 'B收款',
+          props: {
+            placeholder: '请输入 B收款',
+          },
+        },
+        {
           id: 'username',
           type: 'input',
           name: 'username',
@@ -79,6 +107,50 @@ export const basicSection: NodeSchema = {
           label: '验证码',
           props: {
             length: 6,
+          },
+        },
+        {
+          id: 'employee',
+          type: 'select',
+          name: 'employeeId',
+          label: '部门人员',
+          props: {
+            options: [
+              {
+                departmentId: 'product',
+                email: 'lin@example.com',
+                label: '林产品',
+                phone: '13800000001',
+                value: 'employee-1',
+              },
+              {
+                departmentId: 'engineering',
+                email: 'chen@example.com',
+                label: '陈研发',
+                phone: '13800000002',
+                value: 'employee-2',
+              },
+            ],
+            placeholder: '请选择部门人员',
+          },
+          events: {
+            onchange: {
+              type: 'static',
+              dependency: {
+                'form.departmentId': '{{ $event?.departmentId }}',
+                'form.email': '{{ $event?.email }}',
+                'form.phone': '{{ $event?.phone }}',
+              },
+            },
+          },
+        },
+        {
+          id: 'department',
+          type: 'input',
+          name: 'departmentId',
+          label: '部门编号',
+          props: {
+            placeholder: '选择人员后自动带出',
           },
         },
         {
