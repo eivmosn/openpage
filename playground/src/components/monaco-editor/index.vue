@@ -52,7 +52,7 @@ onMounted(async () => {
     automaticLayout: true,
     cursorBlinking: 'smooth',
     fontFamily: 'JetBrains Mono, Cascadia Code, Consolas, monospace',
-    fontSize: 13,
+    fontSize: 15,
     formatOnPaste: true,
     formatOnType: true,
     minimap: {
