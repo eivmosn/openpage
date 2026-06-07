@@ -1,4 +1,4 @@
-import type { RendererContext } from '../types/runtime'
+import type { RuntimeContext } from '../types/runtime'
 import type { ValueRuntimeHelpers } from './helpers'
 import { getCachedValue } from '../utils/cache'
 import { setByPath } from '../utils/path'
@@ -53,7 +53,7 @@ export function parseTemplateExpression(value: string): string | undefined {
  */
 export function evaluateValue(
   value: unknown,
-  context: RendererContext,
+  context: RuntimeContext,
   scope: Record<string, unknown> = {},
 ): unknown {
   if (isTemplateExpression(value)) {
@@ -81,7 +81,7 @@ export function evaluateValue(
  */
 export function evaluateRecord(
   record: Record<string, unknown>,
-  context: RendererContext,
+  context: RuntimeContext,
   scope: Record<string, unknown> = {},
 ): Record<string, unknown> {
   return Object.fromEntries(
@@ -95,7 +95,7 @@ export function evaluateRecord(
  * @param setters set 映射配置。
  * @param context 当前渲染器运行时上下文。
  */
-export function runSetters(setters: Record<string, unknown> | undefined, context: RendererContext): void {
+export function runSetters(setters: Record<string, unknown> | undefined, context: RuntimeContext): void {
   if (!setters) {
     return
   }
@@ -104,7 +104,7 @@ export function runSetters(setters: Record<string, unknown> | undefined, context
     setByPath(context.state, path, evaluateValue(value, context))
   }
 
-  context.notifyStateChange()
+  context.services.notifyStateChange()
 }
 
 /**
@@ -117,7 +117,7 @@ export function runSetters(setters: Record<string, unknown> | undefined, context
  */
 function evaluateExpression(
   value: string,
-  context: RendererContext,
+  context: RuntimeContext,
   scope: Record<string, unknown>,
 ): unknown {
   const expression = parseTemplateExpression(value)

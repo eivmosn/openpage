@@ -1,4 +1,4 @@
-import type { NodeSchema, PageSchema } from '../types/schema'
+import type { ComponentSchema, PageSchema } from '../types/schema'
 import type { InteractionPreset, InteractionStyleObject, ResolvedInteractionStyle } from './types'
 import { interactionPresets } from './presets'
 
@@ -11,21 +11,21 @@ const STATE_SELECTORS: Record<(typeof INTERACTION_KEYS)[number], string> = {
 }
 
 /**
- * 生成页面节点的稳定交互样式类名。
+ * 生成页面组件的稳定交互样式类名。
  *
  * @param pageId 当前页面 id。
- * @param nodeId 当前节点 id。
+ * @param componentId 当前组件 id。
  * @returns 返回经过安全处理的交互样式类名。
  */
-export function createInteractionClassName(pageId: string, nodeId: string): string {
-  return `op-node-${sanitizeIdentifier(pageId)}-${sanitizeIdentifier(nodeId)}`
+export function createInteractionClassName(pageId: string, componentId: string): string {
+  return `op-component-${sanitizeIdentifier(pageId)}-${sanitizeIdentifier(componentId)}`
 }
 
 /**
  * 移除不会传递给真实组件的交互配置。
  *
- * @param props 当前节点属性。
- * @returns 返回移除交互配置后的节点属性。
+ * @param props 当前组件属性。
+ * @returns 返回移除交互配置后的组件属性。
  */
 export function omitInteractionProps(props: Record<string, unknown>): Record<string, unknown> {
   const {
@@ -40,7 +40,7 @@ export function omitInteractionProps(props: Record<string, unknown>): Record<str
 }
 
 /**
- * 收集页面内所有节点的交互 CSS。
+ * 收集页面内所有组件的交互 CSS。
  *
  * @param schema 当前页面 Schema。
  * @returns 返回页面级交互 CSS。
@@ -50,20 +50,20 @@ export function collectPageInteractionCss(schema: PageSchema): string {
   const animatedClasses: string[] = []
 
   /**
-   * 递归收集节点交互样式。
+   * 递归收集组件交互样式。
    *
-   * @param node 当前 Schema 节点。
+   * @param component 当前 Schema 组件。
    */
-  function walk(node: NodeSchema): void {
-    const className = createInteractionClassName(schema.id, node.id)
-    const css = createNodeInteractionCss(className, node.props || {})
+  function walk(component: ComponentSchema): void {
+    const className = createInteractionClassName(schema.id, component.id)
+    const css = createComponentInteractionCss(className, component.props || {})
 
     if (css) {
       blocks.push(css)
       animatedClasses.push(`.${className}`)
     }
 
-    node.children?.forEach(walk)
+    component.children?.forEach(walk)
   }
 
   schema.children.forEach(walk)
@@ -76,13 +76,13 @@ export function collectPageInteractionCss(schema: PageSchema): string {
 }
 
 /**
- * 创建单个节点的交互 CSS。
+ * 创建单个组件的交互 CSS。
  *
- * @param className 节点交互类名。
- * @param props 当前节点属性。
- * @returns 返回节点交互 CSS。
+ * @param className 组件交互类名。
+ * @param props 当前组件属性。
+ * @returns 返回组件交互 CSS。
  */
-function createNodeInteractionCss(className: string, props: Record<string, unknown>): string {
+function createComponentInteractionCss(className: string, props: Record<string, unknown>): string {
   const blocks: string[] = []
   const baseStyle: InteractionStyleObject = {}
 
@@ -185,7 +185,7 @@ function sanitizeIdentifier(value: string): string {
 /**
  * 创建减少动态效果的无障碍 CSS。
  *
- * @param selectors 当前页面包含动画的节点选择器。
+ * @param selectors 当前页面包含动画的组件选择器。
  * @returns 返回减少动态效果媒体查询。
  */
 function createReducedMotionCss(selectors: string[]): string {

@@ -1,10 +1,10 @@
 export interface PageSchema {
   id: string
   title?: string
-  children: NodeSchema[]
+  children: ComponentSchema[]
 }
 
-export interface NodeSchema {
+export interface ComponentSchema {
   id: string
   type: string
   name?: string
@@ -15,11 +15,8 @@ export interface NodeSchema {
   defaultValue?: unknown
   computedValue?: unknown
   props?: Record<string, unknown>
-  children?: NodeSchema[]
+  children?: ComponentSchema[]
   events?: Record<string, EventSchema>
-  model?: {
-    path: string
-  }
 }
 
 export interface StaticEventActionSchema {

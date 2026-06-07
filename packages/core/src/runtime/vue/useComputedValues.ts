@@ -1,9 +1,9 @@
 import type { EffectScope, ShallowRef } from 'vue'
-import type { CompiledNode } from '../types/compiled'
-import type { RendererContext } from '../types/runtime'
+import type { CompiledComponent } from '../../types/compiled'
+import type { RuntimeContext } from '../../types/runtime'
 import { effectScope, watch } from 'vue'
-import { getByPath, setByPath } from '../utils/path'
-import { evaluateValue } from './expression'
+import { getByPath, setByPath } from '../../utils/path'
+import { evaluateValue } from '../expression'
 
 interface ComputedUpdateGuard {
   notifyPending: boolean
@@ -12,16 +12,16 @@ interface ComputedUpdateGuard {
 }
 
 const MAX_COMPUTED_UPDATES_PER_FLUSH = 10
-const updateGuards = new WeakMap<RendererContext, ComputedUpdateGuard>()
+const updateGuards = new WeakMap<RuntimeContext, ComputedUpdateGuard>()
 
 /**
  * 创建 Renderer 级计算字段调度器。
  *
- * 普通节点不会创建计算监听，每个计算字段仅创建一个依赖监听。
+ * 普通组件不会创建计算监听，每个计算字段仅创建一个依赖监听。
  *
  * @param context 当前渲染器运行时上下文引用。
  */
-export function useComputedValues(context: ShallowRef<RendererContext | undefined>): void {
+export function useComputedValues(context: ShallowRef<RuntimeContext | undefined>): void {
   let computedScope: EffectScope | undefined
 
   watch(
@@ -63,18 +63,18 @@ export function useComputedValues(context: ShallowRef<RendererContext | undefine
  * @param context 当前渲染器运行时上下文。
  * @returns 返回计算字段监听作用域。
  */
-function createComputedScope(context: RendererContext): EffectScope {
+function createComputedScope(context: RuntimeContext): EffectScope {
   const scope = effectScope()
 
   scope.run(() => {
-    for (const node of context.compiled.nodes.values()) {
-      if (node.computedValue === undefined || !node.model?.path) {
+    for (const component of context.compiled.components.values()) {
+      if (component.computedValue === undefined || !component.model?.path) {
         continue
       }
 
       watch(
-        () => evaluateValue(node.computedValue, context),
-        value => syncComputedValue(node, context, value),
+        () => evaluateValue(component.computedValue, context),
+        value => syncComputedValue(component, context, value),
         {
           immediate: true,
         },
@@ -86,14 +86,14 @@ function createComputedScope(context: RendererContext): EffectScope {
 }
 
 /**
- * 将计算结果同步到节点模型路径。
+ * 将计算结果同步到组件模型路径。
  *
- * @param node 当前计算字段节点。
+ * @param component 当前计算字段组件。
  * @param context 当前渲染器运行时上下文。
  * @param value 最新计算结果。
  */
-function syncComputedValue(node: CompiledNode, context: RendererContext, value: unknown): void {
-  const path = node.model?.path
+function syncComputedValue(component: CompiledComponent, context: RuntimeContext, value: unknown): void {
+  const path = component.model?.path
 
   if (!path || Object.is(getByPath(context.state, path), value) || !allowComputedUpdate(context, path)) {
     return
@@ -110,7 +110,7 @@ function syncComputedValue(node: CompiledNode, context: RendererContext, value: 
  * @param path 当前计算字段模型路径。
  * @returns 返回当前路径是否允许写入。
  */
-function allowComputedUpdate(context: RendererContext, path: string): boolean {
+function allowComputedUpdate(context: RuntimeContext, path: string): boolean {
   const guard = resolveUpdateGuard(context)
   const updateCount = (guard.pathUpdates.get(path) || 0) + 1
 
@@ -137,7 +137,7 @@ function allowComputedUpdate(context: RendererContext, path: string): boolean {
  *
  * @param context 当前渲染器运行时上下文。
  */
-function scheduleStateNotification(context: RendererContext): void {
+function scheduleStateNotification(context: RuntimeContext): void {
   const guard = resolveUpdateGuard(context)
 
   if (guard.notifyPending) {
@@ -147,7 +147,7 @@ function scheduleStateNotification(context: RendererContext): void {
   guard.notifyPending = true
   queueMicrotask(() => {
     guard.notifyPending = false
-    context.notifyStateChange()
+    context.services.notifyStateChange()
   })
 }
 
@@ -157,7 +157,7 @@ function scheduleStateNotification(context: RendererContext): void {
  * @param context 当前渲染器运行时上下文。
  * @returns 返回计算字段更新保护状态。
  */
-function resolveUpdateGuard(context: RendererContext): ComputedUpdateGuard {
+function resolveUpdateGuard(context: RuntimeContext): ComputedUpdateGuard {
   const existedGuard = updateGuards.get(context)
 
   if (existedGuard) {

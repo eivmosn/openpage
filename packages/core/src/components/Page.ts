@@ -1,19 +1,19 @@
 import type { PropType } from 'vue'
-import type { UiAdapter } from '../adapters/types'
-import type { RendererContext, RendererPlatform } from '../types/runtime'
+import type { UiAdapter } from '../types/adapter'
+import type { PageContext, PagePlatform } from '../types/page'
 import type { PageSchema } from '../types/schema'
 import { computed, defineComponent, h, markRaw, shallowRef, toRaw, watch } from 'vue'
 import { compileSchema } from '../compiler/compileSchema'
 import { usePageInteractionStyles } from '../interactions/usePageInteractionStyles'
-import { useComputedValues } from '../runtime/computedValue'
-import { createRendererContext, updateRendererSchema, updateRendererState } from '../runtime/context'
-import { NodeRenderer } from './NodeRenderer'
-import { Provider } from './Provider'
+import { createPageContext, updatePageSchema, updatePageState } from '../runtime/vue/createPageContext'
+import { useComputedValues } from '../runtime/vue/useComputedValues'
+import { ComponentRenderer } from './ComponentRenderer'
+import { PageProvider } from './PageProvider'
 
 const missingAdapterMessage = 'OpenPage Renderer 渲染失败：未配置 UI Adapter，请通过 adapter 属性传入适配器。'
 
-export const Renderer = defineComponent({
-  name: 'OpenPageRenderer',
+export const Page = defineComponent({
+  name: 'OpenPage',
   emits: {
     'update:state': (_state: Record<string, unknown>) => true,
   },
@@ -31,7 +31,7 @@ export const Renderer = defineComponent({
       default: undefined,
     },
     platform: {
-      type: Object as PropType<RendererPlatform>,
+      type: Object as PropType<PagePlatform>,
       default: () => ({}),
     },
   },
@@ -41,7 +41,7 @@ export const Renderer = defineComponent({
 
     usePageInteractionStyles(schema)
 
-    const context = shallowRef<RendererContext>()
+    const context = shallowRef<PageContext>()
     useComputedValues(context)
 
     /**
@@ -58,30 +58,31 @@ export const Renderer = defineComponent({
       }
 
       if (!context.value) {
-        context.value = createRendererContext(compiled.value, props.state, adapter, props.platform, notifyStateChange)
+        context.value = createPageContext(compiled.value, props.state, adapter, props.platform, notifyStateChange)
         return
       }
 
       context.value.adapter = adapter
+      context.value.services.message = props.platform.message
     }, {
       immediate: true,
     })
 
     watch(compiled, (latestCompiled) => {
       if (context.value) {
-        updateRendererSchema(context.value, latestCompiled)
+        updatePageSchema(context.value, latestCompiled)
       }
     })
 
     watch(() => props.state, (state) => {
       if (context.value) {
-        updateRendererState(context.value, state)
+        updatePageState(context.value, state)
       }
     })
 
     watch(() => props.platform, (platform) => {
       if (context.value) {
-        context.value.platform = platform
+        context.value.services.message = platform.message
       }
     })
 
@@ -95,9 +96,9 @@ export const Renderer = defineComponent({
         }, missingAdapterMessage)
       }
 
-      return h(Provider, { context: runtimeContext }, {
+      return h(PageProvider, { context: runtimeContext }, {
         default: () => runtimeContext.compiled.children.map(id =>
-          h(NodeRenderer, {
+          h(ComponentRenderer, {
             key: id,
             id,
           }),

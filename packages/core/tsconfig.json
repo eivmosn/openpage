@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "tsBuildInfoFile": "../../.cache/tsbuildinfo/core.tsbuildinfo",
+    "types": ["node"],
+    "declaration": true,
+    "declarationMap": false,
+    "noEmit": false,
+    "outDir": "dist"
+  },
+  "include": [
+    "tsdown.config.ts",
+    "src/**/*.ts",
+    "../../env.d.ts"
+  ]
+}

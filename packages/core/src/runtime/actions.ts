@@ -1,24 +1,24 @@
-import type { CompiledNode } from '../types/compiled'
-import type { RendererContext, RuntimeNodePatch } from '../types/runtime'
+import type { CompiledComponent } from '../types/compiled'
+import type { RuntimeComponentPatch, RuntimeContext } from '../types/runtime'
 import type { EventSchema, StaticEventActionSchema } from '../types/schema'
 import type { ValueRuntimeHelpers } from './helpers'
 import { getCachedValue } from '../utils/cache'
 import { getByPath, setByPath } from '../utils/path'
+import { getComponentById, getComponentByName, updateComponentById, updateComponentByName } from './components'
 import { evaluateValue } from './expression'
 import { valueRuntimeHelpers } from './helpers'
-import { getNodeById, getNodeByName, updateNodeById, updateNodeByName } from './nodes'
 
 export interface EventRuntimeHelpers extends ValueRuntimeHelpers {
   $event: unknown
   event: unknown
-  getNodeById: (id: string) => CompiledNode | undefined
-  getNodeByName: (name: string) => CompiledNode | undefined
+  getComponentById: (id: string) => CompiledComponent | undefined
+  getComponentByName: (name: string) => CompiledComponent | undefined
   getState: (path: string) => unknown
-  message: NonNullable<RendererContext['platform']['message']>
+  message: NonNullable<RuntimeContext['services']['message']>
   setState: (path: string, value: unknown) => void
   submitForm: (name: string) => Promise<unknown>
-  updateNodeById: (id: string, patch: RuntimeNodePatch) => boolean
-  updateNodeByName: (name: string, patch: RuntimeNodePatch) => boolean
+  updateComponentById: (id: string, patch: RuntimeComponentPatch) => boolean
+  updateComponentByName: (name: string, patch: RuntimeComponentPatch) => boolean
 }
 
 type ScriptRunner = (state: Record<string, unknown>, helpers: EventRuntimeHelpers) => Promise<unknown>
@@ -26,13 +26,13 @@ type ScriptRunner = (state: Record<string, unknown>, helpers: EventRuntimeHelper
 const scriptCache = new Map<string, ScriptRunner>()
 
 /**
- * 执行节点事件配置。
+ * 执行组件事件配置。
  *
  * @param event 需要执行的事件配置。
  * @param context 当前渲染器运行时上下文。
  * @param payload 事件触发时传入的数据。
  */
-export async function runActions(event: EventSchema | undefined, context: RendererContext, payload?: unknown): Promise<void> {
+export async function runActions(event: EventSchema | undefined, context: RuntimeContext, payload?: unknown): Promise<void> {
   if (!event) {
     return
   }
@@ -61,7 +61,7 @@ export async function runActions(event: EventSchema | undefined, context: Render
  * @param context 当前渲染器运行时上下文。
  * @param payload 当前选中的完整选项。
  */
-function runStaticEvent(action: StaticEventActionSchema, context: RendererContext, payload?: unknown): void {
+function runStaticEvent(action: StaticEventActionSchema, context: RuntimeContext, payload?: unknown): void {
   const scope = {
     $event: payload,
     event: payload,
@@ -71,7 +71,7 @@ function runStaticEvent(action: StaticEventActionSchema, context: RendererContex
     setByPath(context.state, path, evaluateValue(value, context, scope))
   }
 
-  context.notifyStateChange()
+  context.services.notifyStateChange()
 }
 
 /**
@@ -81,7 +81,7 @@ function runStaticEvent(action: StaticEventActionSchema, context: RendererContex
  * @param context 当前渲染器运行时上下文。
  * @param payload 事件触发时传入的数据。
  */
-async function runScriptEvent(script: string, context: RendererContext, payload?: unknown): Promise<void> {
+async function runScriptEvent(script: string, context: RuntimeContext, payload?: unknown): Promise<void> {
   const helpers = createEventHelpers(context, payload)
 
   const runScript = getCachedValue(scriptCache, script, () => compileScript(script))
@@ -89,7 +89,7 @@ async function runScriptEvent(script: string, context: RendererContext, payload?
     await runScript(context.state, helpers)
   }
   finally {
-    context.notifyStateChange()
+    context.services.notifyStateChange()
   }
 }
 
@@ -115,32 +115,21 @@ function compileScript(script: string): ScriptRunner {
  * @param payload 事件触发时传入的数据。
  * @returns 返回事件脚本运行时内置函数。
  */
-function createEventHelpers(context: RendererContext, payload?: unknown): EventRuntimeHelpers {
+function createEventHelpers(context: RuntimeContext, payload?: unknown): EventRuntimeHelpers {
   return {
     ...valueRuntimeHelpers,
     $event: payload,
     event: payload,
-    getNodeById: (id: string) => getNodeById(context, id),
-    getNodeByName: (name: string) => getNodeByName(context, name),
+    getComponentById: (id: string) => getComponentById(context, id),
+    getComponentByName: (name: string) => getComponentByName(context, name),
     getState: (path: string) => getByPath(context.state, path),
-    message: context.platform.message || {},
+    message: context.services.message || {},
     setState: (path: string, value: unknown) => {
       setByPath(context.state, path, value)
-      context.notifyStateChange()
+      context.services.notifyStateChange()
     },
-    submitForm: (name: string) => submitNamedForm(context, name),
-    updateNodeById: (id: string, patch: RuntimeNodePatch) => updateNodeById(context, id, patch),
-    updateNodeByName: (name: string, patch: RuntimeNodePatch) => updateNodeByName(context, name, patch),
+    submitForm: async (name: string) => await context.services.submitForm?.(name),
+    updateComponentById: (id: string, patch: RuntimeComponentPatch) => updateComponentById(context, id, patch),
+    updateComponentByName: (name: string, patch: RuntimeComponentPatch) => updateComponentByName(context, name, patch),
   }
-}
-
-/**
- * 触发指定表单的提交校验事件。
- *
- * @param context 当前渲染器运行时上下文。
- * @param name 需要提交的表单名称。
- * @returns 返回表单提交事件执行结果。
- */
-async function submitNamedForm(context: RendererContext, name: string): Promise<unknown> {
-  return await context.eventHandlers.get(name)?.get('submit')?.()
 }

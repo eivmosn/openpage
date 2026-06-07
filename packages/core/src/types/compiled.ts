@@ -4,11 +4,11 @@ export interface CompiledPage {
   id: string
   title?: string
   children: string[]
-  nodes: Map<string, CompiledNode>
-  nodeNames: Map<string, string>
+  components: Map<string, CompiledComponent>
+  componentNames: Map<string, string>
 }
 
-export interface CompiledNode {
+export interface CompiledComponent {
   id: string
   type: string
   name?: string
@@ -21,7 +21,6 @@ export interface CompiledNode {
   props: Record<string, unknown>
   children: string[]
   events: Record<string, EventSchema>
-  formField: boolean
   model?: {
     path: string
   }
