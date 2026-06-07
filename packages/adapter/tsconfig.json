@@ -1,0 +1,19 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": "../../.cache/tsbuildinfo/adapter.tsbuildinfo",
+    "paths": {
+      "@openpage/core": [
+        "../core/src/index.ts"
+      ]
+    },
+    "types": ["node", "naive-ui/volar"]
+  },
+  "include": [
+    "tsdown.config.ts",
+    "src/**/*.ts",
+    "src/**/*.vue",
+    "../../env.d.ts",
+    "../core/src/**/*.ts"
+  ]
+}
