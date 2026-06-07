@@ -1,4 +1,4 @@
-import type { PageSchema } from '@openpage/renderer'
+import type { PageSchema } from '@openpage/core'
 import { advancedSection } from './sections/advanced'
 import { basicSection } from './sections/basic'
 import { preferenceSection } from './sections/preference'
@@ -22,9 +22,9 @@ export const testSchema: PageSchema = {
           },
           children: [
             {
-              id: 'component-form',
+              id: 'form',
               type: 'form',
-              name: 'component-form',
+              name: 'form',
               children: [
                 basicSection,
                 preferenceSection,
@@ -86,7 +86,7 @@ export const testSchema: PageSchema = {
                       },
                       events: {
                         onclick: `
-                          const valid = await submitForm('component-form')
+                          const valid = await submitForm('form')
                           if (!valid) {
                             message.error('请检查必填信息')
                             return

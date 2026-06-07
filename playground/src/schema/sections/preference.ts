@@ -1,6 +1,6 @@
-import type { NodeSchema } from '@openpage/renderer'
+import type { ComponentSchema } from '@openpage/core'
 
-export const preferenceSection: NodeSchema = {
+export const preferenceSection: ComponentSchema = {
   id: 'preference-section',
   type: 'div',
   props: {

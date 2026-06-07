@@ -1,6 +1,6 @@
-import type { NodeSchema } from '@openpage/renderer'
+import type { ComponentSchema } from '@openpage/core'
 
-export const basicSection: NodeSchema = {
+export const basicSection: ComponentSchema = {
   id: 'basic-section',
   type: 'div',
   props: {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { UiAdapter } from '@openpage/renderer'
-import { Renderer } from '@openpage/renderer'
+import type { UiAdapter } from '@openpage/core'
+import { Page } from '@openpage/core'
 import { NButton, NTooltip, useMessage } from 'naive-ui'
 import { computed, onBeforeUnmount, shallowRef, useTemplateRef } from 'vue'
 import { useResizablePanels } from '../composables/useResizablePanels'
@@ -112,7 +112,7 @@ onBeforeUnmount(() => {
     <section class="playground__panel playground__preview-panel">
       <Scrollbar>
         <div class="openpage-shell">
-          <Renderer
+          <Page
             :adapter="adapter"
             :schema="schema"
             :state="state"

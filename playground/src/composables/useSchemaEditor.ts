@@ -1,4 +1,4 @@
-import type { PageSchema } from '@openpage/renderer'
+import type { PageSchema } from '@openpage/core'
 import type { ShallowRef } from 'vue'
 import { onBeforeUnmount, shallowRef, watch } from 'vue'
 

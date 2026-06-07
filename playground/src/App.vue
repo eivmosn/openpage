@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { createNaiveUiAdapter } from '@openpage/renderer'
+import { createNaiveUiAdapter } from '@openpage/adapter'
 import { NConfigProvider, NMessageProvider } from 'naive-ui'
 import PlaygroundPage from './components/PlaygroundPage.vue'
 

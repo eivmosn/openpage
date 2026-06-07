@@ -1,4 +1,4 @@
-import type { NodeSchema, PageSchema } from '@openpage/renderer'
+import type { ComponentSchema, PageSchema } from '@openpage/core'
 
 export interface StressTestData {
   schema: PageSchema
@@ -16,7 +16,7 @@ const MAX_STRESS_FIELD_COUNT = 1_000
  */
 export async function createStressTestData(fieldCount: number): Promise<StressTestData> {
   const normalizedFieldCount = normalizeFieldCount(fieldCount)
-  const children: NodeSchema[] = []
+  const children: ComponentSchema[] = []
   const form: Record<string, unknown> = {}
 
   for (let start = 0; start < normalizedFieldCount; start += GENERATION_BATCH_SIZE) {
@@ -38,13 +38,13 @@ export async function createStressTestData(fieldCount: number): Promise<StressTe
         {
           id: 'stress-form',
           type: 'form',
-          name: 'stress-form',
+          name: 'stressForm',
           children,
         },
       ],
     },
     state: {
-      form,
+      stressForm: form,
     },
   }
 }
@@ -69,7 +69,7 @@ function normalizeFieldCount(fieldCount: number): number {
  * @param index 当前字段索引。
  * @returns 返回压力测试字段配置。
  */
-function createStressField(index: number): NodeSchema {
+function createStressField(index: number): ComponentSchema {
   if (index >= 2 && index % 20 === 0) {
     return createComputedField(index)
   }
@@ -95,14 +95,14 @@ function createStressField(index: number): NodeSchema {
  * @param index 当前字段索引。
  * @returns 返回文本输入字段配置。
  */
-function createInputField(index: number): NodeSchema {
+function createInputField(index: number): ComponentSchema {
   return {
     id: `stress-field-${index}`,
     type: 'input',
     name: `field-${index}`,
     label: `文本字段 ${index}`,
-    disabled: index % 97 === 0 ? '{{ form["field-1"] === true }}' : undefined,
-    visible: index % 101 === 0 ? '{{ form["field-2"] !== "hidden" }}' : undefined,
+    disabled: index % 97 === 0 ? '{{ stressForm["field-1"] === true }}' : undefined,
+    visible: index % 101 === 0 ? '{{ stressForm["field-2"] !== "hidden" }}' : undefined,
     props: {
       placeholder: `field-${index}`,
     },
@@ -115,7 +115,7 @@ function createInputField(index: number): NodeSchema {
  * @param index 当前字段索引。
  * @returns 返回数字输入字段配置。
  */
-function createNumberField(index: number): NodeSchema {
+function createNumberField(index: number): ComponentSchema {
   return {
     id: `stress-field-${index}`,
     type: 'inputNumber',
@@ -131,13 +131,13 @@ function createNumberField(index: number): NodeSchema {
  * @param index 当前字段索引。
  * @returns 返回计算字段配置。
  */
-function createComputedField(index: number): NodeSchema {
+function createComputedField(index: number): ComponentSchema {
   return {
     id: `stress-field-${index}`,
     type: 'inputNumber',
     name: `field-${index}`,
     label: `计算字段 ${index}`,
-    computedValue: `{{ sum(form["field-${index - 1}"], form["field-${index - 2}"]) }}`,
+    computedValue: `{{ sum(stressForm["field-${index - 1}"], stressForm["field-${index - 2}"]) }}`,
   }
 }
 
@@ -147,7 +147,7 @@ function createComputedField(index: number): NodeSchema {
  * @param index 当前字段索引。
  * @returns 返回开关字段配置。
  */
-function createSwitchField(index: number): NodeSchema {
+function createSwitchField(index: number): ComponentSchema {
   return {
     id: `stress-field-${index}`,
     type: 'switch',
@@ -162,7 +162,7 @@ function createSwitchField(index: number): NodeSchema {
  * @param index 当前字段索引。
  * @returns 返回单选联动字段配置。
  */
-function createLinkageField(index: number): NodeSchema {
+function createLinkageField(index: number): ComponentSchema {
   return {
     id: `stress-field-${index}`,
     type: 'select',
@@ -186,7 +186,7 @@ function createLinkageField(index: number): NodeSchema {
       onchange: {
         type: 'static',
         dependency: {
-          [`form.field-${index + 1}`]: '{{ $event?.targetValue }}',
+          [`stressForm.field-${index + 1}`]: '{{ $event?.targetValue }}',
         },
       },
     },
