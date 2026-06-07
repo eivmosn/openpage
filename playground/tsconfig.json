@@ -3,7 +3,8 @@
   "compilerOptions": {
     "tsBuildInfoFile": "../.cache/tsbuildinfo/playground.tsbuildinfo",
     "paths": {
-      "@openpage/renderer": ["../packages/renderer/src/index.ts"]
+      "@openpage/adapter": ["../packages/adapter/src/index.ts"],
+      "@openpage/core": ["../packages/core/src/index.ts"]
     },
     "types": ["node", "naive-ui/volar"]
   },

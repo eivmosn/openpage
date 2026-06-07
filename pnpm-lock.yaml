@@ -105,21 +105,11 @@ importers:
         specifier: 'catalog:'
         version: 3.5.35(typescript@6.0.3)
 
-  packages/editor:
+  packages/adapter:
     dependencies:
-      '@openpage/renderer':
+      '@openpage/core':
         specifier: workspace:*
-        version: link:../renderer
-    devDependencies:
-      tsdown:
-        specifier: 'catalog:'
-        version: 0.22.2(@tsdown/css@0.22.2)(typescript@6.0.3)(vue-tsc@3.2.9(typescript@6.0.3))
-      typescript:
-        specifier: 'catalog:'
-        version: 6.0.3
-
-  packages/renderer:
-    dependencies:
+        version: link:../core
       naive-ui:
         specifier: 'catalog:'
         version: 2.44.1(vue@3.5.35(typescript@6.0.3))
@@ -143,11 +133,29 @@ importers:
         specifier: 'catalog:'
         version: 3.2.9(typescript@6.0.3)
 
+  packages/core:
+    devDependencies:
+      tsdown:
+        specifier: 'catalog:'
+        version: 0.22.2(@tsdown/css@0.22.2)(typescript@6.0.3)(vue-tsc@3.2.9(typescript@6.0.3))
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      vue:
+        specifier: 'catalog:'
+        version: 3.5.35(typescript@6.0.3)
+      vue-tsc:
+        specifier: 'catalog:'
+        version: 3.2.9(typescript@6.0.3)
+
   playground:
     dependencies:
-      '@openpage/renderer':
+      '@openpage/adapter':
         specifier: workspace:*
-        version: link:../packages/renderer
+        version: link:../packages/adapter
+      '@openpage/core':
+        specifier: workspace:*
+        version: link:../packages/core
       modern-monaco:
         specifier: 'catalog:'
         version: 0.4.2(typescript@6.0.3)

@@ -9,7 +9,8 @@ export default defineConfig({
   plugins: [vue()],
   resolve: {
     alias: {
-      '@openpage/renderer': fileURLToPath(new URL('../packages/renderer/src/index.ts', import.meta.url)),
+      '@openpage/adapter': fileURLToPath(new URL('../packages/adapter/src/index.ts', import.meta.url)),
+      '@openpage/core': fileURLToPath(new URL('../packages/core/src/index.ts', import.meta.url)),
     },
   },
 })

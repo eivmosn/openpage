@@ -9,7 +9,8 @@
     "typecheck": "vue-tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
-    "@openpage/renderer": "workspace:*",
+    "@openpage/adapter": "workspace:*",
+    "@openpage/core": "workspace:*",
     "modern-monaco": "catalog:",
     "naive-ui": "catalog:",
     "vue": "catalog:"
