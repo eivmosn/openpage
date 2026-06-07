@@ -17,10 +17,6 @@ export const uiComponentProps = {
     type: Function as PropType<UiComponentProps['emitComponentEvent']>,
     required: true,
   },
-  emitNamedComponentEvent: {
-    type: Function as PropType<UiComponentProps['emitNamedComponentEvent']>,
-    required: true,
-  },
   updateModelValue: {
     type: Function as PropType<UiComponentProps['updateModelValue']>,
     required: true,

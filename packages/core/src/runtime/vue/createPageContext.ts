@@ -24,7 +24,6 @@ export function createPageContext(
 ): PageContext {
   const eventHandlers = markRaw(new Map<string, Map<string, RuntimeEventHandler>>())
   const services = shallowReactive<RuntimeServices>({
-    emitNamedEvent: async (componentName, eventName, payload) => await emitNamedEvent(eventHandlers, componentName, eventName, payload),
     message: platform.message,
     notifyStateChange,
     registerEventHandler: (componentName, eventName, handler) => registerEventHandler(eventHandlers, componentName, eventName, handler),
@@ -55,8 +54,6 @@ export function updatePageSchema(
 ): void {
   context.compiled = compiled
   const eventHandlers = markRaw(new Map())
-  context.services.emitNamedEvent = async (componentName, eventName, payload) =>
-    await emitNamedEvent(eventHandlers, componentName, eventName, payload)
   context.services.registerEventHandler = (componentName, eventName, handler) =>
     registerEventHandler(eventHandlers, componentName, eventName, handler)
   context.services.submitForm = async name => await eventHandlers.get(name)?.get('submit')?.()
@@ -111,32 +108,5 @@ function registerEventHandler(
     if (handlers.size === 0) {
       eventHandlers.delete(componentName)
     }
-  }
-}
-
-/**
- * 触发指定组件名称下已注册的运行时事件。
- *
- * @param eventHandlers 当前页面事件处理器集合。
- * @param componentName 需要触发事件的组件名称。
- * @param eventName 需要触发的事件名称。
- * @param payload 当前事件载荷。
- * @returns 返回事件是否已处理以及处理结果。
- */
-async function emitNamedEvent(
-  eventHandlers: Map<string, Map<string, RuntimeEventHandler>>,
-  componentName: string,
-  eventName: string,
-  payload?: unknown,
-): Promise<{ handled: boolean, value?: unknown }> {
-  const handler = eventHandlers.get(componentName)?.get(eventName)
-
-  if (!handler) {
-    return { handled: false }
-  }
-
-  return {
-    handled: true,
-    value: await handler(payload),
   }
 }

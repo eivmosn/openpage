@@ -4,11 +4,6 @@ export type RuntimeComponentPatch = Partial<Omit<CompiledComponent, 'id'>>
 
 export type RuntimeEventHandler = (payload?: unknown) => Promise<unknown> | unknown
 
-export interface RuntimeEventResult {
-  handled: boolean
-  value?: unknown
-}
-
 export interface RuntimeMessageService {
   success?: (content: string) => void
   error?: (content: string) => void
@@ -17,7 +12,6 @@ export interface RuntimeMessageService {
 }
 
 export interface RuntimeServices {
-  emitNamedEvent?: (componentName: string, eventName: string, payload?: unknown) => Promise<RuntimeEventResult> | RuntimeEventResult
   message?: RuntimeMessageService
   notifyStateChange: () => void
   registerEventHandler?: (componentName: string, eventName: string, handler: RuntimeEventHandler) => () => void

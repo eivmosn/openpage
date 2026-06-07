@@ -5,7 +5,7 @@ import type { ValueRuntimeHelpers } from './helpers'
 import { getCachedValue } from '../utils/cache'
 import { getByPath, setByPath } from '../utils/path'
 import { getComponentById, getComponentByName, updateComponentById, updateComponentByName } from './components'
-import { evaluateValue } from './expression'
+import { resolveExpressionValue } from './expression'
 import { valueRuntimeHelpers } from './helpers'
 
 export interface EventRuntimeHelpers extends ValueRuntimeHelpers {
@@ -68,7 +68,7 @@ function runStaticEvent(action: StaticEventActionSchema, context: RuntimeContext
   }
 
   for (const [path, value] of Object.entries(action.dependency)) {
-    setByPath(context.state, path, evaluateValue(value, context, scope))
+    setByPath(context.state, path, resolveExpressionValue(value, context, scope))
   }
 
   context.services.notifyStateChange()

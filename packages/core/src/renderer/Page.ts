@@ -7,10 +7,25 @@ import { compileSchema } from '../compiler/compileSchema'
 import { usePageInteractionStyles } from '../interactions/usePageInteractionStyles'
 import { createPageContext, updatePageSchema, updatePageState } from '../runtime/vue/createPageContext'
 import { useComputedValues } from '../runtime/vue/useComputedValues'
-import { ComponentRenderer } from './ComponentRenderer'
-import { PageProvider } from './PageProvider'
+import { providePageContext } from '../runtime/vue/usePageContext'
+import { Component } from './Component'
 
 const missingAdapterMessage = 'OpenPage Renderer 渲染失败：未配置 UI Adapter，请通过 adapter 属性传入适配器。'
+
+const PageProvider = defineComponent({
+  name: 'OpenPageProvider',
+  props: {
+    context: {
+      type: Object as PropType<PageContext>,
+      required: true,
+    },
+  },
+  setup(props, { slots }) {
+    providePageContext(props.context)
+
+    return () => slots.default?.()
+  },
+})
 
 export const Page = defineComponent({
   name: 'OpenPage',
@@ -98,7 +113,7 @@ export const Page = defineComponent({
 
       return h(PageProvider, { context: runtimeContext }, {
         default: () => runtimeContext.compiled.children.map(id =>
-          h(ComponentRenderer, {
+          h(Component, {
             key: id,
             id,
           }),

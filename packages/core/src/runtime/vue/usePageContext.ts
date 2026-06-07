@@ -5,7 +5,7 @@ import { inject, provide } from 'vue'
 export const pageContextKey: InjectionKey<PageContext> = Symbol('openpage-page-context')
 
 /**
- * 向子组件提供页面渲染上下文。
+ * 向页面组件树提供页面渲染上下文。
  *
  * @param context 当前页面渲染上下文。
  */
@@ -14,7 +14,7 @@ export function providePageContext(context: PageContext): void {
 }
 
 /**
- * 获取当前页面渲染上下文。
+ * 获取当前页面组件树注入的渲染上下文。
  *
  * @returns 返回当前注入的页面渲染上下文。
  */

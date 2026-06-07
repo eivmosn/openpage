@@ -6,6 +6,7 @@
   "scripts": {
     "build": "vite build",
     "dev": "vite --host 0.0.0.0",
+    "dev:debug": "vite --host 0.0.0.0 --mode debug",
     "typecheck": "vue-tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {

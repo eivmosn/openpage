@@ -8,7 +8,6 @@ export interface UiComponentProps {
   value?: unknown
   children?: () => unknown
   emitComponentEvent: (eventName: string, payload?: unknown) => Promise<void>
-  emitNamedComponentEvent: (componentName: string, eventName: string, payload?: unknown) => Promise<unknown>
   updateModelValue: (value: unknown) => void
 }
 

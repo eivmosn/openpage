@@ -44,14 +44,14 @@ export function parseTemplateExpression(value: string): string | undefined {
 }
 
 /**
- * 计算任意配置值。
+ * 解析任意配置值中的模板表达式。
  *
- * @param value 需要计算的配置值。
+ * @param value 需要解析的配置值。
  * @param context 当前渲染器运行时上下文。
  * @param scope 当前表达式的局部变量。
- * @returns 返回计算后的配置值。
+ * @returns 返回解析后的配置值。
  */
-export function evaluateValue(
+export function resolveExpressionValue(
   value: unknown,
   context: RuntimeContext,
   scope: Record<string, unknown> = {},
@@ -61,7 +61,7 @@ export function evaluateValue(
   }
 
   if (Array.isArray(value)) {
-    return value.map(item => evaluateValue(item, context, scope))
+    return value.map(item => resolveExpressionValue(item, context, scope))
   }
 
   if (isPlainRecord(value)) {
@@ -85,7 +85,7 @@ export function evaluateRecord(
   scope: Record<string, unknown> = {},
 ): Record<string, unknown> {
   return Object.fromEntries(
-    Object.entries(record).map(([key, value]) => [key, evaluateValue(value, context, scope)]),
+    Object.entries(record).map(([key, value]) => [key, resolveExpressionValue(value, context, scope)]),
   )
 }
 
@@ -101,7 +101,7 @@ export function runSetters(setters: Record<string, unknown> | undefined, context
   }
 
   for (const [path, value] of Object.entries(setters)) {
-    setByPath(context.state, path, evaluateValue(value, context))
+    setByPath(context.state, path, resolveExpressionValue(value, context))
   }
 
   context.services.notifyStateChange()

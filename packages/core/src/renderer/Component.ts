@@ -2,13 +2,13 @@ import type { CompiledComponent } from '../types/compiled'
 import { computed, defineComponent, h } from 'vue'
 import { createInteractionClassName, omitInteractionProps } from '../interactions/css'
 import { runActions } from '../runtime/actions'
-import { getComponentByName, resolveRuntimeComponent } from '../runtime/components'
-import { evaluateValue } from '../runtime/expression'
+import { resolveRuntimeComponent } from '../runtime/components'
+import { resolveExpressionValue } from '../runtime/expression'
 import { useComponentModel } from '../runtime/vue/useComponentModel'
 import { usePageContext } from '../runtime/vue/usePageContext'
 
-export const ComponentRenderer = defineComponent({
-  name: 'OpenPageComponentRenderer',
+export const Component = defineComponent({
+  name: 'OpenPageComponent',
   props: {
     id: {
       type: String,
@@ -32,11 +32,11 @@ export const ComponentRenderer = defineComponent({
 
     const renderedComponent = computed<CompiledComponent>(() => ({
       ...runtimeComponent.value,
-      label: evaluateValue(runtimeComponent.value.label, context) as string | undefined,
-      visible: evaluateValue(runtimeComponent.value.visible, context),
-      disabled: evaluateValue(runtimeComponent.value.disabled, context),
-      required: evaluateValue(runtimeComponent.value.required, context),
-      defaultValue: evaluateValue(runtimeComponent.value.defaultValue, context),
+      label: resolveExpressionValue(runtimeComponent.value.label, context) as string | undefined,
+      visible: resolveExpressionValue(runtimeComponent.value.visible, context),
+      disabled: resolveExpressionValue(runtimeComponent.value.disabled, context),
+      required: resolveExpressionValue(runtimeComponent.value.required, context),
+      defaultValue: resolveExpressionValue(runtimeComponent.value.defaultValue, context),
       computedValue: runtimeComponent.value.computedValue,
       props: evaluateComponentProps(runtimeComponent.value),
     }))
@@ -54,29 +54,6 @@ export const ComponentRenderer = defineComponent({
     }
 
     /**
-     * 通过组件名称触发目标组件配置的事件动作。
-     *
-     * @param componentName 目标组件名称。
-     * @param eventName 需要触发的事件名称。
-     * @param payload 事件携带的数据。
-     */
-    async function emitNamedComponentEvent(componentName: string, eventName: string, payload?: unknown): Promise<unknown> {
-      const eventResult = await context.services.emitNamedEvent?.(componentName, eventName, payload)
-
-      if (eventResult?.handled) {
-        return eventResult.value
-      }
-
-      const targetComponent = getComponentByName(context, componentName)
-
-      if (!targetComponent) {
-        throw new Error(`[openpage] component not found by name: ${componentName}`)
-      }
-
-      return runActions(targetComponent.events[eventName], context, payload)
-    }
-
-    /**
      * 计算组件运行时 props。
      *
      * @param currentComponent 当前编译组件。
@@ -86,7 +63,7 @@ export const ComponentRenderer = defineComponent({
       const evaluatedProps = Object.fromEntries(
         Object.entries(currentComponent.props).map(([key, value]) => [
           key,
-          evaluateValue(value, context),
+          resolveExpressionValue(value, context),
         ]),
       )
 
@@ -113,7 +90,7 @@ export const ComponentRenderer = defineComponent({
      */
     function renderChildren(): unknown {
       return runtimeComponent.value.children.map(childId =>
-        h(ComponentRenderer, {
+        h(Component, {
           key: childId,
           id: childId,
         }),
@@ -131,7 +108,6 @@ export const ComponentRenderer = defineComponent({
         context,
         value: model.value.value,
         emitComponentEvent,
-        emitNamedComponentEvent,
         updateModelValue: model.updateValue,
       }
     }

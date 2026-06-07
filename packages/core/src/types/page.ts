@@ -1,4 +1,4 @@
-import type { Page } from '../components/Page'
+import type { Page } from '../renderer/Page'
 import type { UiAdapter } from './adapter'
 import type { RuntimeContext, RuntimeMessageService } from './runtime'
 

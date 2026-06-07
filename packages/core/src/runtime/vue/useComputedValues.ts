@@ -3,7 +3,7 @@ import type { CompiledComponent } from '../../types/compiled'
 import type { RuntimeContext } from '../../types/runtime'
 import { effectScope, watch } from 'vue'
 import { getByPath, setByPath } from '../../utils/path'
-import { evaluateValue } from '../expression'
+import { resolveExpressionValue } from '../expression'
 
 interface ComputedUpdateGuard {
   notifyPending: boolean
@@ -73,7 +73,7 @@ function createComputedScope(context: RuntimeContext): EffectScope {
       }
 
       watch(
-        () => evaluateValue(component.computedValue, context),
+        () => resolveExpressionValue(component.computedValue, context),
         value => syncComputedValue(component, context, value),
         {
           immediate: true,
