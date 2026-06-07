@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { UiAdapter } from '@openpage/core'
 import { Page } from '@openpage/core'
-import { NButton, NTooltip, useMessage } from 'naive-ui'
+import { NButton, NScrollbar, NTooltip, useMessage } from 'naive-ui'
 import { computed, onBeforeUnmount, shallowRef, useTemplateRef } from 'vue'
 import { useResizablePanels } from '../composables/useResizablePanels'
 import { useSchemaEditor } from '../composables/useSchemaEditor'
@@ -9,7 +9,6 @@ import { useStateEditor } from '../composables/useStateEditor'
 import { testSchema, testState } from '../schema'
 import { createStressTestData } from '../stress/createStressTestData'
 import MonacoEditor from './monaco-editor'
-import Scrollbar from './scrollbar/scrollbar.vue'
 
 defineProps<{
   adapter: UiAdapter
@@ -110,7 +109,7 @@ onBeforeUnmount(() => {
     />
 
     <section class="playground__panel playground__preview-panel">
-      <Scrollbar>
+      <NScrollbar class="playground__preview-scrollbar">
         <div class="openpage-shell">
           <Page
             :adapter="adapter"
@@ -120,7 +119,7 @@ onBeforeUnmount(() => {
             @update:state="syncStateSource"
           />
         </div>
-      </Scrollbar>
+      </NScrollbar>
     </section>
 
     <div
@@ -225,7 +224,7 @@ onBeforeUnmount(() => {
   margin-left: auto;
 }
 
-.playground__preview-panel :deep(.open-scrollbar) {
+.playground__preview-scrollbar {
   flex: 1;
   min-height: 0;
 }
