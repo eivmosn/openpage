@@ -18,7 +18,7 @@ const STATE_SELECTORS: Record<(typeof INTERACTION_KEYS)[number], string> = {
  * @returns 返回经过安全处理的交互样式类名。
  */
 export function createInteractionClassName(pageId: string, componentId: string): string {
-  return `op-component-${sanitizeIdentifier(pageId)}-${sanitizeIdentifier(componentId)}`
+  return `${sanitizeIdentifier(pageId)}-${sanitizeIdentifier(componentId)}`
 }
 
 /**

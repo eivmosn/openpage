@@ -7,6 +7,7 @@ import { useFormField } from '../composables/useFormField'
 
 defineOptions({
   name: 'OpenPageNaiveCheckboxGroup',
+  inheritAttrs: false,
 })
 
 const props = defineProps<UiComponentProps>()

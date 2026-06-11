@@ -4,7 +4,10 @@ import { NDynamicTags } from 'naive-ui'
 import { computed } from 'vue'
 import { useFormField } from '../composables/useFormField'
 
-defineOptions({ name: 'OpenPageNaiveDynamicTags' })
+defineOptions({
+  name: 'OpenPageNaiveDynamicTags',
+  inheritAttrs: false,
+})
 const props = defineProps<UiComponentProps>()
 const field = useFormField(props)
 const value = computed(resolveValue)

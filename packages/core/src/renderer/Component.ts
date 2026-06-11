@@ -138,11 +138,6 @@ export const Component = defineComponent({
       return {
         component: renderedComponent.value,
         context,
-        rootProps: {
-          'class': ['openpage-component', renderedComponent.value.interactionClassName],
-          'data-openpage-component-id': renderedComponent.value.id,
-          'data-openpage-component-type': renderedComponent.value.type,
-        },
         value: model.value.value,
         emitComponentEvent,
         updateModelValue: model.updateValue,

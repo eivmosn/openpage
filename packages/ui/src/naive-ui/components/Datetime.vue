@@ -7,6 +7,7 @@ import { toBusinessStringValue, toNaiveNullableString } from '../utils/emptyValu
 
 defineOptions({
   name: 'OpenPageNaiveDatetime',
+  inheritAttrs: false,
 })
 
 const props = defineProps<UiComponentProps>()

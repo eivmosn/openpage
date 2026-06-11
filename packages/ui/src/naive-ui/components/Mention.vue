@@ -3,7 +3,10 @@ import type { UiComponentProps } from '../../types'
 import { NMention } from 'naive-ui'
 import { useFormField } from '../composables/useFormField'
 
-defineOptions({ name: 'OpenPageNaiveMention' })
+defineOptions({
+  name: 'OpenPageNaiveMention',
+  inheritAttrs: false,
+})
 const props = defineProps<UiComponentProps>()
 const field = useFormField(props)
 

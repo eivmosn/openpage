@@ -5,6 +5,7 @@ import { useFormField } from '../composables/useFormField'
 
 defineOptions({
   name: 'OpenPageNaivePassword',
+  inheritAttrs: false,
 })
 
 const props = defineProps<UiComponentProps>()

@@ -4,7 +4,10 @@ import { NQrCode } from 'naive-ui'
 import { computed } from 'vue'
 import { useFormField } from '../composables/useFormField'
 
-defineOptions({ name: 'OpenPageNaiveQrCode' })
+defineOptions({
+  name: 'OpenPageNaiveQrCode',
+  inheritAttrs: false,
+})
 
 const props = defineProps<UiComponentProps>()
 const field = useFormField(props)

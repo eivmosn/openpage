@@ -6,6 +6,7 @@ import { useFormField } from '../composables/useFormField'
 
 defineOptions({
   name: 'OpenPageNaiveSwitch',
+  inheritAttrs: false,
 })
 
 const props = defineProps<UiComponentProps>()

@@ -9,6 +9,7 @@ import { toBusinessSelectValue, toNaiveNullableSelectValue } from '../utils/empt
 
 defineOptions({
   name: 'OpenPageNaiveSelect',
+  inheritAttrs: false,
 })
 
 const props = defineProps<UiComponentProps>()

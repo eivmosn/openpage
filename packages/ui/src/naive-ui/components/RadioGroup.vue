@@ -8,6 +8,7 @@ import { toNaiveNullableSelectValue } from '../utils/emptyValue'
 
 defineOptions({
   name: 'OpenPageNaiveRadioGroup',
+  inheritAttrs: false,
 })
 
 const props = defineProps<UiComponentProps>()

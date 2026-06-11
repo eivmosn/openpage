@@ -5,7 +5,10 @@ import { computed } from 'vue'
 import { useFormField } from '../composables/useFormField'
 import { toBusinessStringValue, toNaiveNullableString } from '../utils/emptyValue'
 
-defineOptions({ name: 'OpenPageNaiveColorPicker' })
+defineOptions({
+  name: 'OpenPageNaiveColorPicker',
+  inheritAttrs: false,
+})
 const props = defineProps<UiComponentProps>()
 const field = useFormField(props)
 const value = computed(() => toNaiveNullableString(field.rawValue.value))

@@ -6,6 +6,7 @@ import { resolveButtonSize, resolveButtonType } from '../utils/resolve'
 
 defineOptions({
   name: 'OpenPageNaiveButton',
+  inheritAttrs: false,
 })
 
 const props = defineProps<UiComponentProps>()

@@ -4,7 +4,10 @@ import { NInputNumber } from 'naive-ui'
 import { computed } from 'vue'
 import { useFormField } from '../composables/useFormField'
 
-defineOptions({ name: 'OpenPageNaiveInputNumber' })
+defineOptions({
+  name: 'OpenPageNaiveInputNumber',
+  inheritAttrs: false,
+})
 const props = defineProps<UiComponentProps>()
 const field = useFormField(props)
 const readonly = computed(() => props.component.computedValue !== undefined || props.component.props.readonly === true)

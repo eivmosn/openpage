@@ -3,7 +3,10 @@ import type { UiComponentProps } from '../../types'
 import { NAutoComplete } from 'naive-ui'
 import { useFormField } from '../composables/useFormField'
 
-defineOptions({ name: 'OpenPageNaiveAutoComplete' })
+defineOptions({
+  name: 'OpenPageNaiveAutoComplete',
+  inheritAttrs: false,
+})
 const props = defineProps<UiComponentProps>()
 const field = useFormField(props)
 

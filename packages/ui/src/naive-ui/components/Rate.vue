@@ -4,7 +4,10 @@ import { NRate } from 'naive-ui'
 import { computed } from 'vue'
 import { useFormField } from '../composables/useFormField'
 
-defineOptions({ name: 'OpenPageNaiveRate' })
+defineOptions({
+  name: 'OpenPageNaiveRate',
+  inheritAttrs: false,
+})
 const props = defineProps<UiComponentProps>()
 const field = useFormField(props)
 const value = computed(resolveValue)

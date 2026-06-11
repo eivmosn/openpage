@@ -4,7 +4,10 @@ import { NSlider } from 'naive-ui'
 import { computed } from 'vue'
 import { useFormField } from '../composables/useFormField'
 
-defineOptions({ name: 'OpenPageNaiveSlider' })
+defineOptions({
+  name: 'OpenPageNaiveSlider',
+  inheritAttrs: false,
+})
 const props = defineProps<UiComponentProps>()
 const field = useFormField(props)
 const value = computed(resolveValue)
