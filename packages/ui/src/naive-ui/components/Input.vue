@@ -4,16 +4,16 @@ import { NInput } from 'naive-ui'
 import { useFormField } from '../composables/useFormField'
 
 defineOptions({
-  name: 'OpenPageNaivePassword',
+  name: 'OpenPageNaiveInput',
 })
 
 const props = defineProps<UiComponentProps>()
-const field = useFormField(props, { inputType: 'password' })
+const field = useFormField(props)
 
 /**
- * 更新密码项模型值。
+ * 更新输入框模型值。
  *
- * @param nextValue 输入组件上报的新值。
+ * @param nextValue 输入框上报的新值。
  */
 async function handleUpdateValue(nextValue: string): Promise<void> {
   props.updateModelValue(nextValue)
@@ -24,12 +24,12 @@ async function handleUpdateValue(nextValue: string): Promise<void> {
 <template>
   <NInput
     :disabled="field.disabled.value"
-    :placeholder="field.placeholder.value"
-    :type="field.type.value"
-    :value="field.value.value"
     :input-props="{
       autocomplete: 'current-password',
     }"
+    :placeholder="field.placeholder.value"
+    :type="field.type.value"
+    :value="field.value.value"
     @update:value="handleUpdateValue"
   />
 </template>

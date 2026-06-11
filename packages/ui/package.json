@@ -1,5 +1,5 @@
 {
-  "name": "@openpage/adapter",
+  "name": "@openpage/ui",
   "type": "module",
   "version": "0.1.0",
   "exports": {

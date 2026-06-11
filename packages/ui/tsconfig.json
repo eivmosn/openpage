@@ -1,7 +1,7 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "tsBuildInfoFile": "../../.cache/tsbuildinfo/adapter.tsbuildinfo",
+    "tsBuildInfoFile": "../../.cache/tsbuildinfo/ui.tsbuildinfo",
     "paths": {
       "@openpage/core": [
         "../core/src/index.ts"
@@ -13,7 +13,6 @@
     "tsdown.config.ts",
     "src/**/*.ts",
     "src/**/*.vue",
-    "../../env.d.ts",
-    "../core/src/**/*.ts"
+    "../../env.d.ts"
   ]
 }

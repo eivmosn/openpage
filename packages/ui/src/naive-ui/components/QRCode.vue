@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { UiComponentProps } from '../../types'
-import { NFormItem, NQrCode } from 'naive-ui'
+import { NQrCode } from 'naive-ui'
 import { computed } from 'vue'
 import { useFormField } from '../composables/useFormField'
 
@@ -21,7 +21,13 @@ function resolveValue(): string {
 </script>
 
 <template>
-  <NFormItem :label="field.label.value">
+  <div class="openpage-naive-qr-code-field">
+    <div
+      v-if="field.label.value"
+      class="openpage-naive-qr-code-label"
+    >
+      {{ field.label.value }}
+    </div>
     <NQrCode
       v-bind="props.component.props"
       class="openpage-naive-qr-code"
@@ -29,10 +35,22 @@ function resolveValue(): string {
       color="#409eff"
       background-color="#F5F5F5"
     />
-  </NFormItem>
+  </div>
 </template>
 
 <style scoped>
+.openpage-naive-qr-code-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.openpage-naive-qr-code-label {
+  color: rgba(31, 41, 55, 0.82);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
 .openpage-naive-qr-code {
   box-sizing: content-box;
 }
