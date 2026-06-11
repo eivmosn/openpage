@@ -46,6 +46,21 @@ describe('@openpage/script-runner', () => {
     expect(result.patches).toHaveLength(1)
   })
 
+  it('removes newly created fields when failed scripts are rolled back', async () => {
+    const state: Record<string, unknown> = {
+      form: {},
+    }
+
+    const result = await runScript('form.temp = 1\ncreated = true\nthrow new Error("boom")', {
+      state,
+    })
+
+    expect(result.ok).toBe(false)
+    expect(state).toEqual({
+      form: {},
+    })
+  })
+
   it('throws wrapped errors when throwOnError is enabled', async () => {
     await expect(runScript('throw new Error("boom")', {
       state: {},

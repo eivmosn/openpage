@@ -36,6 +36,11 @@ export interface StatePatch {
    * 变更前的旧值，用于调试和失败回滚。
    */
   oldValue?: unknown
+
+  /**
+   * 写入前该字段是否真实存在，用于回滚新增字段。
+   */
+  existed?: boolean
 }
 
 /**

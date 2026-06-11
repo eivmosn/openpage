@@ -66,12 +66,14 @@ export class ScriptTransaction {
     }
 
     const oldValue = readPath(this.state, path)
+    const existed = hasPath(this.state, path)
     writePath(this.state, path, value)
     this.patches.push({
       type: 'set',
       path: [...path],
       value,
       oldValue,
+      existed,
     })
   }
 
@@ -87,11 +89,13 @@ export class ScriptTransaction {
     }
 
     const oldValue = readPath(this.state, path)
+    const existed = hasPath(this.state, path)
     deletePath(this.state, path)
     this.patches.push({
       type: 'delete',
       path: [...path],
       oldValue,
+      existed,
     })
   }
 
@@ -109,11 +113,11 @@ export class ScriptTransaction {
     for (let index = this.patches.length - 1; index >= 0; index -= 1) {
       const patch = this.patches[index]
 
-      if (patch.type === 'set') {
+      if (patch.existed) {
         writePath(this.state, patch.path, patch.oldValue)
       }
       else {
-        writePath(this.state, patch.path, patch.oldValue)
+        deletePath(this.state, patch.path)
       }
     }
 
@@ -177,6 +181,31 @@ function readPath(state: Record<string, unknown>, path: ScriptPath): unknown {
   }
 
   return current
+}
+
+/**
+ * 判断路径是否真实存在。
+ *
+ * @param state 状态根对象。
+ * @param path 需要判断的路径。
+ * @returns 返回路径是否存在。
+ */
+function hasPath(state: Record<string, unknown>, path: ScriptPath): boolean {
+  if (path.length === 0) {
+    return true
+  }
+
+  let current: unknown = state
+
+  for (const key of path.slice(0, -1)) {
+    if (!isObjectLike(current)) {
+      return false
+    }
+
+    current = Reflect.get(current, toPropertyKey(key))
+  }
+
+  return isObjectLike(current) && Reflect.has(current, toPropertyKey(path[path.length - 1]))
 }
 
 /**
