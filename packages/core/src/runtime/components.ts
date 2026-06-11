@@ -1,5 +1,7 @@
 import type { CompiledComponent } from '../types/compiled'
-import type { RuntimeComponentPatch, RuntimeContext } from '../types/runtime'
+import type { ResolvedRuntimeComponentPatch, RuntimeComponentPatch, RuntimeContext } from '../types/runtime'
+import { compileProps } from '../compiler/compileProps'
+import { compileExpressionValue, hasTemplateExpression } from './expression'
 
 /**
  * 通过组件 id 获取运行时组件。
@@ -44,11 +46,13 @@ export function getComponentByName(context: RuntimeContext, name: string): Compi
  * @returns 返回是否更新成功。
  */
 export function updateComponentById(context: RuntimeContext, id: string, patch: RuntimeComponentPatch): boolean {
-  if (!context.compiled.components.has(id)) {
+  const component = context.compiled.components.get(id)
+
+  if (!component) {
     return false
   }
 
-  context.componentPatches[id] = mergeComponentPatch(context.componentPatches[id], patch)
+  context.componentPatches[id] = mergeComponentPatch(component, context.componentPatches[id], patch)
   return true
 }
 
@@ -84,32 +88,23 @@ export function resolveRuntimeComponent(context: RuntimeContext, component: Comp
     return component
   }
 
-  return {
-    ...component,
-    ...patch,
-    id: component.id,
-    props: {
-      ...component.props,
-      ...patch.props,
-    },
-    events: {
-      ...component.events,
-      ...patch.events,
-    },
-    children: patch.children || component.children,
-    model: patch.model || component.model,
-  }
+  return patch.resolvedComponent
 }
 
 /**
  * 合并两次运行时组件更新。
  *
+ * @param component 原始编译组件。
  * @param previous 已存在的组件更新。
  * @param patch 新的组件更新。
  * @returns 返回合并后的组件更新。
  */
-function mergeComponentPatch(previous: RuntimeComponentPatch | undefined, patch: RuntimeComponentPatch): RuntimeComponentPatch {
-  return {
+function mergeComponentPatch(
+  component: CompiledComponent,
+  previous: ResolvedRuntimeComponentPatch | undefined,
+  patch: RuntimeComponentPatch,
+): ResolvedRuntimeComponentPatch {
+  const nextPatch = {
     ...previous,
     ...patch,
     props: {
@@ -121,4 +116,85 @@ function mergeComponentPatch(previous: RuntimeComponentPatch | undefined, patch:
       ...patch.events,
     },
   }
+
+  const props = {
+    ...component.props,
+    ...nextPatch.props,
+  }
+  const compiledProps = compileProps(props)
+  const dynamicValues = resolveDynamicValues(component, nextPatch)
+  const dynamicResolvers = resolveDynamicFieldResolvers(component.dynamicFieldKeys, dynamicValues)
+
+  const resolvedPatch = {
+    ...nextPatch,
+    props: compiledProps.props,
+    dynamic: {
+      fields: Object.freeze(Object.keys(dynamicResolvers)),
+      props: compiledProps.dynamicPropKeys,
+    },
+    dynamicValues,
+    dynamicFieldKeys: component.dynamicFieldKeys,
+    dynamicResolvers,
+    staticProps: compiledProps.staticProps,
+    dynamicProps: compiledProps.dynamicProps,
+  }
+  const resolvedComponent = {
+    ...component,
+    ...resolvedPatch,
+    id: component.id,
+    events: {
+      ...component.events,
+      ...resolvedPatch.events,
+    },
+    children: resolvedPatch.children || component.children,
+    model: resolvedPatch.model || component.model,
+  }
+
+  return {
+    ...resolvedPatch,
+    resolvedComponent,
+  }
+}
+
+/**
+ * 合并运行时更新后的可配置动态字段原始值。
+ *
+ * @param component 原始编译组件。
+ * @param patch 当前合并后的组件更新。
+ * @returns 返回动态字段原始值。
+ */
+function resolveDynamicValues(component: CompiledComponent, patch: RuntimeComponentPatch): Record<string, unknown> {
+  const dynamicValues: Record<string, unknown> = {}
+
+  for (const field of component.dynamicFieldKeys) {
+    dynamicValues[field] = field in patch
+      ? patch[field as keyof RuntimeComponentPatch]
+      : component.dynamicValues[field]
+  }
+
+  return dynamicValues
+}
+
+/**
+ * 编译运行时更新后的字段解析器。
+ *
+ * @param dynamicFieldKeys 需要运行时动态求值的组件字段键名。
+ * @param dynamicValues 当前动态字段原始值。
+ * @returns 返回动态字段解析器集合。
+ */
+function resolveDynamicFieldResolvers(
+  dynamicFieldKeys: readonly string[],
+  dynamicValues: Record<string, unknown>,
+): CompiledComponent['dynamicResolvers'] {
+  const resolvers: CompiledComponent['dynamicResolvers'] = {}
+
+  for (const field of dynamicFieldKeys) {
+    const value = dynamicValues[field]
+
+    if (hasTemplateExpression(value)) {
+      resolvers[field] = compileExpressionValue(value)
+    }
+  }
+
+  return resolvers
 }

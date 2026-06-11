@@ -1,3 +1,4 @@
+import type { ExpressionValueResolver } from '../runtime/expression'
 import type { EventSchema } from './schema'
 
 export interface CompiledPage {
@@ -6,6 +7,7 @@ export interface CompiledPage {
   children: string[]
   components: Map<string, CompiledComponent>
   componentNames: Map<string, string>
+  interactionCss: string
 }
 
 export interface CompiledComponent {
@@ -13,15 +15,30 @@ export interface CompiledComponent {
   type: string
   name?: string
   label?: string
+  dynamicValues: Record<string, unknown>
+  dynamicFieldKeys: readonly string[]
   visible?: unknown
   disabled?: unknown
-  required?: unknown
   defaultValue?: unknown
   computedValue?: unknown
   props: Record<string, unknown>
+  staticProps: Record<string, unknown>
+  dynamicProps: readonly CompiledDynamicProp[]
   children: string[]
   events: Record<string, EventSchema>
   model?: {
     path: string
   }
+  dynamic: CompiledComponentDynamicFields
+  dynamicResolvers: CompiledComponentDynamicResolvers
+  interactionClassName?: string
 }
+
+export interface CompiledComponentDynamicFields {
+  fields: readonly string[]
+  props: readonly string[]
+}
+
+export type CompiledDynamicProp = readonly [key: string, resolveValue: ExpressionValueResolver]
+
+export type CompiledComponentDynamicResolvers = Record<string, ExpressionValueResolver>

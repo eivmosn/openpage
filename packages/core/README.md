@@ -1,5 +1,7 @@
 # OpenPage Renderer 配置手册
 
+> 架构设计、运行链路和性能策略见 [ARCHITECTURE.md](./ARCHITECTURE.md)。
+
 `@openpage/renderer` 是一个由 JSON Schema 驱动的 Vue 页面渲染器。它负责：
 
 - 根据 Schema 创建页面结构和 UI 组件。
@@ -580,7 +582,7 @@ type EventSchema = string | EventActionSchema | EventSchema[]
 }
 ```
 
-事件脚本执行结束后，Renderer 会通知外部受控 State 已更新。
+事件脚本执行成功且产生 State 写入后，Renderer 会通知外部受控 State 已更新。
 
 ### 事件脚本 Helper
 
@@ -612,7 +614,7 @@ setState('form.username', 'new-name')
 - 简单、明确的脚本可以直接修改 `form.xxx`。
 - 动态路径使用 `setState()`。
 - 复杂脚本拆分业务逻辑，不要在 Schema 中堆积超长脚本。
-- Schema 脚本使用 `new Function` 执行，只能执行可信配置，禁止运行用户提供的未审核脚本。
+- Schema 脚本由 `@openpage/script-runner` 执行，运行错误会被拦截并回滚本次 State 写入；它仍然是可信配置执行能力，不是安全沙箱。
 
 ## 静态 Select 字段联动
 

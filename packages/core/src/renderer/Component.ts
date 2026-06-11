@@ -1,9 +1,7 @@
 import type { CompiledComponent } from '../types/compiled'
 import { computed, defineComponent, h } from 'vue'
-import { createInteractionClassName, omitInteractionProps } from '../interactions/css'
 import { runActions } from '../runtime/actions'
 import { resolveRuntimeComponent } from '../runtime/components'
-import { resolveExpressionValue } from '../runtime/expression'
 import { useComponentModel } from '../runtime/vue/useComponentModel'
 import { usePageContext } from '../runtime/vue/usePageContext'
 
@@ -17,6 +15,8 @@ export const Component = defineComponent({
   },
   setup(props) {
     const context = usePageContext()
+    let cachedChildren: CompiledComponent['children'] | undefined
+    let cachedChildrenVNodes: unknown
 
     const component = computed(() => {
       const compiledComponent = context.compiled.components.get(props.id)
@@ -30,16 +30,17 @@ export const Component = defineComponent({
 
     const runtimeComponent = computed(() => resolveRuntimeComponent(context, component.value))
 
-    const renderedComponent = computed<CompiledComponent>(() => ({
-      ...runtimeComponent.value,
-      label: resolveExpressionValue(runtimeComponent.value.label, context) as string | undefined,
-      visible: resolveExpressionValue(runtimeComponent.value.visible, context),
-      disabled: resolveExpressionValue(runtimeComponent.value.disabled, context),
-      required: resolveExpressionValue(runtimeComponent.value.required, context),
-      defaultValue: resolveExpressionValue(runtimeComponent.value.defaultValue, context),
-      computedValue: runtimeComponent.value.computedValue,
-      props: evaluateComponentProps(runtimeComponent.value),
-    }))
+    const renderedComponent = computed<CompiledComponent>(() => {
+      const currentComponent = runtimeComponent.value
+      const dynamicValues = resolveComponentDynamicValues(currentComponent)
+
+      return {
+        ...currentComponent,
+        ...dynamicValues,
+        dynamicValues,
+        props: evaluateComponentProps(currentComponent),
+      }
+    })
 
     const model = useComponentModel(runtimeComponent, context)
 
@@ -60,14 +61,36 @@ export const Component = defineComponent({
      * @returns 返回已计算展示表达式的 props。
      */
     function evaluateComponentProps(currentComponent: CompiledComponent): Record<string, unknown> {
-      const evaluatedProps = Object.fromEntries(
-        Object.entries(currentComponent.props).map(([key, value]) => [
-          key,
-          resolveExpressionValue(value, context),
-        ]),
-      )
+      if (currentComponent.dynamicProps.length === 0) {
+        return currentComponent.staticProps
+      }
 
-      return omitInteractionProps(evaluatedProps)
+      const props = { ...currentComponent.staticProps }
+
+      for (const [key, resolveValue] of currentComponent.dynamicProps) {
+        props[key] = resolveValue(context)
+      }
+
+      return props
+    }
+
+    /**
+     * 解析组件可配置动态字段，静态字段直接复用原值。
+     *
+     * @param currentComponent 当前编译组件。
+     * @returns 返回解析后的动态字段值。
+     */
+    function resolveComponentDynamicValues(currentComponent: CompiledComponent): Record<string, unknown> {
+      const dynamicValues: Record<string, unknown> = {}
+
+      for (const field of currentComponent.dynamicFieldKeys) {
+        const resolveValue = currentComponent.dynamicResolvers[field]
+        dynamicValues[field] = resolveValue
+          ? resolveValue(context)
+          : currentComponent.dynamicValues[field]
+      }
+
+      return dynamicValues
     }
 
     /**
@@ -89,18 +112,27 @@ export const Component = defineComponent({
      * @returns 返回 Vue 子组件数组。
      */
     function renderChildren(): unknown {
-      return runtimeComponent.value.children.map(childId =>
+      const children = runtimeComponent.value.children
+
+      if (cachedChildren === children) {
+        return cachedChildrenVNodes
+      }
+
+      cachedChildren = children
+      cachedChildrenVNodes = children.map(childId =>
         h(Component, {
           key: childId,
           id: childId,
         }),
       )
+
+      return cachedChildrenVNodes
     }
 
     /**
-     * 创建当前组件组件的公共属性。
+     * 创建当前 UI 组件的公共属性。
      *
-     * @returns 返回适配器组件接收的组件属性。
+     * @returns 返回 UI 组件接收的组件属性。
      */
     function resolveComponentProps() {
       return {
@@ -117,34 +149,21 @@ export const Component = defineComponent({
         return null
       }
 
-      const component = context.adapter.components[renderedComponent.value.type]
+      const component = context.components[renderedComponent.value.type]
 
       if (!component) {
         return h('div', { class: 'openpage-missing-component' }, `Missing component type: ${renderedComponent.value.type}`)
       }
 
-      const componentProps = resolveComponentProps()
-      const interactionClass = createInteractionClassName(context.compiled.id, renderedComponent.value.id)
-
-      if (!renderedComponent.value.model || !context.adapter.formItem) {
-        return h(component, {
-          ...componentProps,
-          class: interactionClass,
-        }, {
+      return h('div', {
+        'class': ['openpage-component', renderedComponent.value.interactionClassName],
+        'data-openpage-component-id': renderedComponent.value.id,
+        'data-openpage-component-type': renderedComponent.value.type,
+      }, [
+        h(component, resolveComponentProps(), {
           default: renderChildren,
-        })
-      }
-
-      const componentVNode = h(component, componentProps, {
-        default: renderChildren,
-      })
-
-      return h(context.adapter.formItem, {
-        ...componentProps,
-        class: interactionClass,
-      }, {
-        default: () => componentVNode,
-      })
+        }),
+      ])
     }
   },
 })

@@ -2,13 +2,13 @@ import type { CompiledComponent } from '../types/compiled'
 import type { RuntimeComponentPatch, RuntimeContext } from '../types/runtime'
 import type { EventSchema, StaticEventActionSchema } from '../types/schema'
 import type { ValueRuntimeHelpers } from './helpers'
-import { getCachedValue } from '../utils/cache'
+import { runScript } from '@openpage/script-runner'
 import { getByPath, setByPath } from '../utils/path'
 import { getComponentById, getComponentByName, updateComponentById, updateComponentByName } from './components'
 import { resolveExpressionValue } from './expression'
 import { valueRuntimeHelpers } from './helpers'
 
-export interface EventRuntimeHelpers extends ValueRuntimeHelpers {
+export interface EventRuntimeHelpers extends ValueRuntimeHelpers, Record<string, unknown> {
   $event: unknown
   event: unknown
   getComponentById: (id: string) => CompiledComponent | undefined
@@ -16,14 +16,9 @@ export interface EventRuntimeHelpers extends ValueRuntimeHelpers {
   getState: (path: string) => unknown
   message: NonNullable<RuntimeContext['services']['message']>
   setState: (path: string, value: unknown) => void
-  submitForm: (name: string) => Promise<unknown>
   updateComponentById: (id: string, patch: RuntimeComponentPatch) => boolean
   updateComponentByName: (name: string, patch: RuntimeComponentPatch) => boolean
 }
-
-type ScriptRunner = (state: Record<string, unknown>, helpers: EventRuntimeHelpers) => Promise<unknown>
-
-const scriptCache = new Map<string, ScriptRunner>()
 
 /**
  * 执行组件事件配置。
@@ -84,28 +79,24 @@ function runStaticEvent(action: StaticEventActionSchema, context: RuntimeContext
 async function runScriptEvent(script: string, context: RuntimeContext, payload?: unknown): Promise<void> {
   const helpers = createEventHelpers(context, payload)
 
-  const runScript = getCachedValue(scriptCache, script, () => compileScript(script))
-  try {
-    await runScript(context.state, helpers)
+  const result = await runScript(script, {
+    state: context.state,
+    helpers,
+    scope: {
+      $event: payload,
+      event: payload,
+    },
+    formatErrorMessage: ({ phase, message }) => `OpenPage script ${phase} error: ${message}`,
+  })
+
+  if (!result.ok) {
+    context.services.message?.error?.(result.error?.message || 'OpenPage script error')
+    return
   }
-  finally {
+
+  if (result.patches.length > 0) {
     context.services.notifyStateChange()
   }
-}
-
-/**
- * 编译事件脚本执行函数。
- *
- * @param script 当前事件脚本。
- * @returns 返回可复用的事件脚本执行函数。
- */
-function compileScript(script: string): ScriptRunner {
-  // eslint-disable-next-line no-new-func
-  return new Function(
-    'state',
-    'helpers',
-    `with (helpers) { with (state) { return (async () => { ${script}\n })() } }`,
-  ) as ScriptRunner
 }
 
 /**
@@ -128,7 +119,6 @@ function createEventHelpers(context: RuntimeContext, payload?: unknown): EventRu
       setByPath(context.state, path, value)
       context.services.notifyStateChange()
     },
-    submitForm: async (name: string) => await context.services.submitForm?.(name),
     updateComponentById: (id: string, patch: RuntimeComponentPatch) => updateComponentById(context, id, patch),
     updateComponentByName: (name: string, patch: RuntimeComponentPatch) => updateComponentByName(context, name, patch),
   }

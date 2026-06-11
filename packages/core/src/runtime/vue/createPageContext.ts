@@ -1,8 +1,8 @@
-import type { UiAdapter } from '../../types/adapter'
 import type { CompiledPage } from '../../types/compiled'
 import type { PageContext, PagePlatform } from '../../types/page'
-import type { RuntimeEventHandler, RuntimeServices } from '../../types/runtime'
-import { markRaw, reactive, shallowReactive } from 'vue'
+import type { RuntimeServices } from '../../types/runtime'
+import type { OpenPageComponents } from '../../types/ui'
+import { reactive, shallowReactive } from 'vue'
 import { applyComponentDefaultValues } from '../defaults'
 
 /**
@@ -10,7 +10,7 @@ import { applyComponentDefaultValues } from '../defaults'
  *
  * @param compiled 当前编译后的页面结构。
  * @param state 当前页面初始状态。
- * @param adapter 当前 UI 适配器。
+ * @param components 当前 UI 组件映射。
  * @param platform 当前平台能力。
  * @param notifyStateChange 状态变更通知函数。
  * @returns 返回可响应更新的渲染器运行时上下文。
@@ -18,21 +18,18 @@ import { applyComponentDefaultValues } from '../defaults'
 export function createPageContext(
   compiled: CompiledPage,
   state: Record<string, unknown>,
-  adapter: UiAdapter,
+  components: OpenPageComponents,
   platform: PagePlatform,
   notifyStateChange: () => void,
 ): PageContext {
-  const eventHandlers = markRaw(new Map<string, Map<string, RuntimeEventHandler>>())
   const services = shallowReactive<RuntimeServices>({
     message: platform.message,
     notifyStateChange,
-    registerEventHandler: (componentName, eventName, handler) => registerEventHandler(eventHandlers, componentName, eventName, handler),
-    submitForm: async name => await eventHandlers.get(name)?.get('submit')?.(),
   })
   const context = shallowReactive<PageContext>({
     compiled,
     state: createReactiveState(state),
-    adapter,
+    components,
     services,
     componentPatches: reactive({}),
   })
@@ -53,10 +50,6 @@ export function updatePageSchema(
   compiled: CompiledPage,
 ): void {
   context.compiled = compiled
-  const eventHandlers = markRaw(new Map())
-  context.services.registerEventHandler = (componentName, eventName, handler) =>
-    registerEventHandler(eventHandlers, componentName, eventName, handler)
-  context.services.submitForm = async name => await eventHandlers.get(name)?.get('submit')?.()
   context.componentPatches = reactive({})
 
   applyComponentDefaultValues(context)
@@ -81,32 +74,4 @@ export function updatePageState(context: PageContext, state: Record<string, unkn
  */
 export function createReactiveState(state: Record<string, unknown>): Record<string, unknown> {
   return reactive(state) as Record<string, unknown>
-}
-
-/**
- * 注册指定组件的运行时事件处理器。
- *
- * @param eventHandlers 当前页面事件处理器集合。
- * @param componentName 需要注册事件的组件名称。
- * @param eventName 需要注册的事件名称。
- * @param handler 当前事件处理器。
- * @returns 返回取消注册当前事件处理器的函数。
- */
-function registerEventHandler(
-  eventHandlers: Map<string, Map<string, RuntimeEventHandler>>,
-  componentName: string,
-  eventName: string,
-  handler: RuntimeEventHandler,
-): () => void {
-  const handlers = eventHandlers.get(componentName) || new Map<string, RuntimeEventHandler>()
-  handlers.set(eventName, handler)
-  eventHandlers.set(componentName, handlers)
-
-  return () => {
-    handlers.delete(eventName)
-
-    if (handlers.size === 0) {
-      eventHandlers.delete(componentName)
-    }
-  }
 }

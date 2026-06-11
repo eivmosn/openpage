@@ -21,6 +21,9 @@
     "prepare": "simple-git-hooks",
     "preinstall": "only-allow pnpm",
     "precommit": "nano-staged",
+    "bench:core": "pnpm --filter @openpage/core bench",
+    "test": "pnpm -r --if-present test",
+    "test:core": "pnpm --filter @openpage/core test",
     "typecheck": "pnpm -r typecheck"
   },
   "devDependencies": {

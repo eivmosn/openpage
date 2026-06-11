@@ -1,7 +1,6 @@
 import type { ComputedRef } from 'vue'
-import type { PageSchema } from '../types/schema'
+import type { CompiledPage } from '../types/compiled'
 import { onBeforeUnmount, onMounted, watch } from 'vue'
-import { collectPageInteractionCss } from './css'
 
 interface StyleRegistryEntry {
   css: string
@@ -13,31 +12,31 @@ const styleRegistry = new Map<string, StyleRegistryEntry>()
 /**
  * 管理页面级交互样式标签生命周期。
  *
- * @param schema 当前响应式页面 Schema。
+ * @param compiled 当前编译后的页面结构。
  */
-export function usePageInteractionStyles(schema: ComputedRef<PageSchema>): void {
+export function usePageInteractionStyles(compiled: ComputedRef<CompiledPage>): void {
   let retainedStyleId: string | undefined
 
   onMounted(() => {
-    retainedStyleId = resolveStyleId(schema.value.id)
+    retainedStyleId = resolveStyleId(compiled.value.id)
     retainStyle(retainedStyleId)
-    updateStyle(schema.value)
+    updateStyle(compiled.value)
   })
 
-  watch(schema, (nextSchema) => {
+  watch(() => [compiled.value.id, compiled.value.interactionCss] as const, () => {
     if (!retainedStyleId) {
       return
     }
 
-    const nextStyleId = resolveStyleId(nextSchema.id)
+    const nextStyleId = resolveStyleId(compiled.value.id)
     if (nextStyleId !== retainedStyleId) {
       releaseStyle(retainedStyleId)
       retainedStyleId = nextStyleId
       retainStyle(retainedStyleId)
     }
 
-    updateStyle(nextSchema)
-  }, { deep: true })
+    updateStyle(compiled.value)
+  })
 
   onBeforeUnmount(() => {
     if (retainedStyleId) {
@@ -62,22 +61,22 @@ function retainStyle(styleId: string): void {
 /**
  * 更新页面级交互样式。
  *
- * @param schema 当前页面 Schema。
+ * @param compiled 当前编译后的页面结构。
  */
-function updateStyle(schema: PageSchema): void {
+function updateStyle(compiled: CompiledPage): void {
   if (typeof document === 'undefined') {
     return
   }
 
-  const styleId = resolveStyleId(schema.id)
-  const css = collectPageInteractionCss(schema)
+  const styleId = resolveStyleId(compiled.id)
+  const css = compiled.interactionCss
   const entry = styleRegistry.get(styleId)
 
   if (entry?.css === css) {
     return
   }
 
-  const styleElement = resolveStyleElement(styleId, schema.id)
+  const styleElement = resolveStyleElement(styleId, compiled.id)
   styleElement.textContent = css
   styleRegistry.set(styleId, {
     css,

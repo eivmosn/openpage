@@ -17,14 +17,20 @@
   ],
   "scripts": {
     "build": "tsdown",
+    "bench": "vitest bench --run",
+    "test": "vitest run",
     "typecheck": "vue-tsc --noEmit -p tsconfig.json"
   },
   "peerDependencies": {
     "vue": "^3.5.35"
   },
+  "dependencies": {
+    "@openpage/script-runner": "workspace:*"
+  },
   "devDependencies": {
     "tsdown": "catalog:",
     "typescript": "catalog:",
+    "vitest": "catalog:",
     "vue": "catalog:",
     "vue-tsc": "catalog:"
   }

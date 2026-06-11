@@ -1,7 +1,7 @@
 import type { PropType } from 'vue'
-import type { UiAdapter } from '../types/adapter'
 import type { PageContext, PagePlatform } from '../types/page'
 import type { PageSchema } from '../types/schema'
+import type { OpenPageComponents } from '../types/ui'
 import { computed, defineComponent, h, markRaw, shallowRef, toRaw, watch } from 'vue'
 import { compileSchema } from '../compiler/compileSchema'
 import { usePageInteractionStyles } from '../interactions/usePageInteractionStyles'
@@ -10,7 +10,7 @@ import { useComputedValues } from '../runtime/vue/useComputedValues'
 import { providePageContext } from '../runtime/vue/usePageContext'
 import { Component } from './Component'
 
-const missingAdapterMessage = 'OpenPage Renderer 渲染失败：未配置 UI Adapter，请通过 adapter 属性传入适配器。'
+const missingComponentsMessage = 'OpenPage Renderer 渲染失败：未配置 UI 组件映射，请通过 components 属性传入组件表。'
 
 const PageProvider = defineComponent({
   name: 'OpenPageProvider',
@@ -41,8 +41,8 @@ export const Page = defineComponent({
       type: Object as PropType<Record<string, unknown>>,
       default: () => ({}),
     },
-    adapter: {
-      type: Object as PropType<UiAdapter>,
+    components: {
+      type: Object as PropType<OpenPageComponents>,
       default: undefined,
     },
     platform: {
@@ -53,8 +53,10 @@ export const Page = defineComponent({
   setup(props, { emit }) {
     const schema = computed(() => props.schema)
     const compiled = computed(() => markRaw(compileSchema(schema.value)))
+    let cachedRootChildren: string[] | undefined
+    let cachedRootChildrenVNodes: unknown
 
-    usePageInteractionStyles(schema)
+    usePageInteractionStyles(compiled)
 
     const context = shallowRef<PageContext>()
     useComputedValues(context)
@@ -66,24 +68,27 @@ export const Page = defineComponent({
       emit('update:state', toRaw(context.value?.state || props.state))
     }
 
-    watch(() => props.adapter, (adapter) => {
-      if (!adapter) {
+    watch(() => props.components, (components) => {
+      if (!components) {
         context.value = undefined
         return
       }
 
       if (!context.value) {
-        context.value = createPageContext(compiled.value, props.state, adapter, props.platform, notifyStateChange)
+        context.value = createPageContext(compiled.value, props.state, components, props.platform, notifyStateChange)
         return
       }
 
-      context.value.adapter = adapter
+      context.value.components = components
       context.value.services.message = props.platform.message
     }, {
       immediate: true,
     })
 
     watch(compiled, (latestCompiled) => {
+      cachedRootChildren = undefined
+      cachedRootChildrenVNodes = undefined
+
       if (context.value) {
         updatePageSchema(context.value, latestCompiled)
       }
@@ -106,19 +111,36 @@ export const Page = defineComponent({
 
       if (!runtimeContext) {
         return h('div', {
-          'data-openpage-renderer-error': 'missing-adapter',
+          'data-openpage-renderer-error': 'missing-components',
           'role': 'alert',
-        }, missingAdapterMessage)
+        }, missingComponentsMessage)
       }
 
       return h(PageProvider, { context: runtimeContext }, {
-        default: () => runtimeContext.compiled.children.map(id =>
-          h(Component, {
-            key: id,
-            id,
-          }),
-        ),
+        default: () => renderRootChildren(runtimeContext.compiled.children),
       })
+    }
+
+    /**
+     * 渲染页面顶层组件，并在结构未变化时复用 VNode 数组。
+     *
+     * @param children 当前页面顶层组件 id 列表。
+     * @returns 返回页面顶层组件 VNode 数组。
+     */
+    function renderRootChildren(children: string[]): unknown {
+      if (cachedRootChildren === children) {
+        return cachedRootChildrenVNodes
+      }
+
+      cachedRootChildren = children
+      cachedRootChildrenVNodes = children.map(id =>
+        h(Component, {
+          key: id,
+          id,
+        }),
+      )
+
+      return cachedRootChildrenVNodes
     }
   },
 })

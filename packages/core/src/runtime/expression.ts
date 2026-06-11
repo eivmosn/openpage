@@ -10,7 +10,13 @@ type ExpressionRunner = (
   scope: Record<string, unknown>,
 ) => unknown
 
+export type ExpressionValueResolver = (
+  context: RuntimeContext,
+  scope?: Record<string, unknown>,
+) => unknown
+
 const expressionCache = new Map<string, ExpressionRunner>()
+const stateScopeCache = new WeakMap<Record<string, unknown>, Record<string, unknown>>()
 
 /**
  * 判断配置值是否为模板表达式。
@@ -23,8 +29,29 @@ export function isTemplateExpression(value: unknown): value is string {
     return false
   }
 
-  const trimmedValue = value.trim()
-  return trimmedValue.startsWith('{{') && trimmedValue.endsWith('}}')
+  return parseTemplateExpression(value) !== undefined
+}
+
+/**
+ * 判断任意配置值中是否包含模板表达式。
+ *
+ * @param value 需要判断的配置值。
+ * @returns 返回值本身或嵌套结构中是否包含模板表达式。
+ */
+export function hasTemplateExpression(value: unknown): boolean {
+  if (isTemplateExpression(value)) {
+    return true
+  }
+
+  if (Array.isArray(value)) {
+    return value.some(item => hasTemplateExpression(item))
+  }
+
+  if (isPlainRecord(value)) {
+    return Object.values(value).some(item => hasTemplateExpression(item))
+  }
+
+  return false
 }
 
 /**
@@ -72,6 +99,47 @@ export function resolveExpressionValue(
 }
 
 /**
+ * 将配置值编译为可复用的运行时解析函数。
+ *
+ * @param value 需要编译的配置值。
+ * @returns 返回运行时可直接执行的值解析函数。
+ */
+export function compileExpressionValue(value: unknown): ExpressionValueResolver {
+  if (typeof value === 'string') {
+    const expression = parseTemplateExpression(value)
+
+    if (expression) {
+      const runExpression = getCachedValue(expressionCache, expression, () => compileExpression(expression))
+      return (context, scope = {}) => runExpression(createStateScope(context.state), valueRuntimeHelpers, scope)
+    }
+  }
+
+  if (Array.isArray(value)) {
+    const itemResolvers = value.map(item => compileExpressionValue(item))
+    return (context, scope = {}) => itemResolvers.map(resolveItem => resolveItem(context, scope))
+  }
+
+  if (isPlainRecord(value)) {
+    const entries = Object.entries(value).map(([key, entryValue]) => [
+      key,
+      compileExpressionValue(entryValue),
+    ] as const)
+
+    return (context, scope = {}) => {
+      const resolvedRecord: Record<string, unknown> = {}
+
+      for (const [key, resolveEntry] of entries) {
+        resolvedRecord[key] = resolveEntry(context, scope)
+      }
+
+      return resolvedRecord
+    }
+  }
+
+  return () => value
+}
+
+/**
  * 计算对象配置。
  *
  * @param record 需要计算的对象配置。
@@ -84,9 +152,13 @@ export function evaluateRecord(
   context: RuntimeContext,
   scope: Record<string, unknown> = {},
 ): Record<string, unknown> {
-  return Object.fromEntries(
-    Object.entries(record).map(([key, value]) => [key, resolveExpressionValue(value, context, scope)]),
-  )
+  const evaluatedRecord: Record<string, unknown> = {}
+
+  for (const [key, value] of Object.entries(record)) {
+    evaluatedRecord[key] = resolveExpressionValue(value, context, scope)
+  }
+
+  return evaluatedRecord
 }
 
 /**
@@ -127,7 +199,55 @@ function evaluateExpression(
   }
 
   const runExpression = getCachedValue(expressionCache, expression, () => compileExpression(expression))
-  return runExpression(context.state, valueRuntimeHelpers, scope)
+  return runExpression(createStateScope(context.state), valueRuntimeHelpers, scope)
+}
+
+/**
+ * 创建表达式专用 State 作用域。
+ *
+ * 低代码表达式允许直接写 `a + b`，字段初始化前缺失变量应解析为 undefined，
+ * 但不能遮蔽 Math、Date 等全局对象，也不能遮蔽函数入参 state/helpers/scope。
+ *
+ * @param state 当前运行时状态对象。
+ * @returns 返回带缺失变量兜底能力的 State 代理。
+ */
+function createStateScope(state: Record<string, unknown>): Record<string, unknown> {
+  const cachedScope = stateScopeCache.get(state)
+
+  if (cachedScope) {
+    return cachedScope
+  }
+
+  const stateScope = new Proxy(state, {
+    has(target, key) {
+      if (typeof key === 'symbol') {
+        return Reflect.has(target, key)
+      }
+
+      if (Reflect.has(target, key)) {
+        return true
+      }
+
+      if (isReservedExpressionIdentifier(key) || Reflect.has(globalThis, key)) {
+        return false
+      }
+
+      return true
+    },
+  })
+
+  stateScopeCache.set(state, stateScope)
+  return stateScope
+}
+
+/**
+ * 判断标识符是否应交给函数词法作用域或全局作用域解析。
+ *
+ * @param key 当前表达式标识符。
+ * @returns 返回是否为表达式执行器保留标识符。
+ */
+function isReservedExpressionIdentifier(key: string): boolean {
+  return key === 'state' || key === 'helpers' || key === 'scope'
 }
 
 /**
