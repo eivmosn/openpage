@@ -111,7 +111,7 @@ export const advancedSection: ComponentSchema = {
           label: '资料二维码',
           props: {
             size: 110,
-            value: '{{ form.qrCode }}',
+            value: '{{ qrCode }}',
           },
         },
       ],

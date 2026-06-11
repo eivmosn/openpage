@@ -46,7 +46,6 @@ export const basicSection: ComponentSchema = {
           type: 'autoComplete',
           name: 'tenant',
           label: '租户',
-          required: true,
           props: {
             options: ['OpenPage Cloud', 'OpenPage Studio', 'OpenPage Enterprise'],
             placeholder: '请输入或选择租户',
@@ -57,7 +56,7 @@ export const basicSection: ComponentSchema = {
           type: 'inputNumber',
           name: 'total',
           label: '总金额',
-          computedValue: '{{ sum(form.a, form.b) }}',
+          computedValue: '{{ sum(a, b) }}',
           props: {
             placeholder: '自动计算 A收款 + B收款',
           },
@@ -85,7 +84,6 @@ export const basicSection: ComponentSchema = {
           type: 'input',
           name: 'username',
           label: '用户名',
-          required: true,
           props: {
             placeholder: '请输入用户名',
           },
@@ -95,7 +93,6 @@ export const basicSection: ComponentSchema = {
           type: 'password',
           name: 'password',
           label: '登录密码',
-          required: true,
           props: {
             placeholder: '请输入登录密码',
           },
@@ -137,9 +134,9 @@ export const basicSection: ComponentSchema = {
             onchange: {
               type: 'static',
               dependency: {
-                'form.departmentId': '{{ $event?.departmentId }}',
-                'form.email': '{{ $event?.email }}',
-                'form.phone': '{{ $event?.phone }}',
+                departmentId: '{{ $event?.departmentId }}',
+                email: '{{ $event?.email }}',
+                phone: '{{ $event?.phone }}',
               },
             },
           },
@@ -158,7 +155,6 @@ export const basicSection: ComponentSchema = {
           type: 'input',
           name: 'phone',
           label: '手机号',
-          required: true,
           props: {
             placeholder: '请输入手机号',
           },

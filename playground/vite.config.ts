@@ -4,14 +4,15 @@ import vue from '@vitejs/plugin-vue'
 import { defineConfig, normalizePath } from 'vite'
 
 const librarySourceDirectories = [
-  normalizePath(fileURLToPath(new URL('../packages/adapter/src/', import.meta.url))),
   normalizePath(fileURLToPath(new URL('../packages/core/src/', import.meta.url))),
+  normalizePath(fileURLToPath(new URL('../packages/script-runner/src/', import.meta.url))),
+  normalizePath(fileURLToPath(new URL('../packages/ui/src/', import.meta.url))),
 ]
 
 /**
  * 创建 OpenPage 源码调试插件。
  *
- * 库源码变更时执行完整刷新，避免 Vue HMR 保留旧组件 props 和适配器定义。
+ * 库源码变更时执行完整刷新，避免 Vue HMR 保留旧组件 props 和组件映射。
  *
  * @returns 返回 OpenPage 源码调试插件。
  */
@@ -43,8 +44,9 @@ export default defineConfig(() => {
     ],
     resolve: {
       alias: {
-        '@openpage/adapter': fileURLToPath(new URL('../packages/adapter/src/index.ts', import.meta.url)),
         '@openpage/core': fileURLToPath(new URL('../packages/core/src/index.ts', import.meta.url)),
+        '@openpage/script-runner': fileURLToPath(new URL('../packages/script-runner/src/index.ts', import.meta.url)),
+        '@openpage/ui': fileURLToPath(new URL('../packages/ui/src/index.ts', import.meta.url)),
       },
     },
   }

@@ -23,8 +23,7 @@ export const testSchema: PageSchema = {
           children: [
             {
               id: 'form',
-              type: 'form',
-              name: 'form',
+              type: 'div',
               children: [
                 basicSection,
                 preferenceSection,
@@ -51,8 +50,8 @@ export const testSchema: PageSchema = {
                       },
                       events: {
                         onclick: `
-                          console.log('暂存表单：', form)
-                          message.info('已暂存当前填写内容')
+                          console.log('暂存数据：', { username, phone, email, channels, tags })
+                          msg.info('已暂存当前填写内容')
                         `,
                       },
                     },
@@ -65,14 +64,14 @@ export const testSchema: PageSchema = {
                       },
                       events: {
                         onclick: `
-                          form.username = ''
-                          form.phone = ''
-                          form.email = ''
-                          form.description = ''
-                          form.channels = []
-                          form.tags = []
-                          form.agreement = false
-                          form.admin = false
+                          username = ''
+                          phone = ''
+                          email = ''
+                          description = ''
+                          channels = []
+                          tags = []
+                          agreement = false
+                          admin = false
                           message.warning('表单已重置')
                         `,
                       },
@@ -86,12 +85,7 @@ export const testSchema: PageSchema = {
                       },
                       events: {
                         onclick: `
-                          const valid = await submitForm('form')
-                          if (!valid) {
-                            message.error('请检查必填信息')
-                            return
-                          }
-                          console.log('提交表单：', form)
+                          console.log('提交数据：', { username, phone, email, channels, tags })
                           message.success('提交成功')
                         `,
                       },
@@ -104,36 +98,47 @@ export const testSchema: PageSchema = {
         },
       ],
     },
+    {
+      id: 'tenant1',
+      type: 'autoComplete',
+      name: 'tenant1',
+      label: '租户2',
+      props: {
+        options: ['OpenPage Cloud', 'OpenPage Studio', 'OpenPage Enterprise'],
+        placeholder: '请输入或选择租户',
+      },
+    },
   ],
 }
 
 export const testState: Record<string, unknown> = {
-  form: {
-    account: '',
-    admin: false,
-    agreement: false,
-    birthday: '',
-    channels: [],
-    color: '#18a058',
-    description: '',
-    departmentId: '',
-    email: '',
-    employeeId: '',
-    loginAt: '',
-    mention: '',
-    mode: '',
-    otp: [],
-    password: '',
-    phone: '',
-    progress: 35,
-    qrCode: 'https://www.naiveui.com/',
-    rating: 3,
-    role: '',
-    tags: ['OpenPage', 'Vue'],
-    team: null,
-    tenant: '',
-    time: null,
-    username: '',
-    years: 3,
-  },
+  a: null,
+  account: '',
+  admin: false,
+  agreement: false,
+  b: null,
+  birthday: '',
+  channels: [],
+  color: '#18a058',
+  description: '',
+  departmentId: '',
+  email: '',
+  employeeId: '',
+  loginAt: '',
+  mention: '',
+  mode: '',
+  otp: [],
+  password: '',
+  phone: '',
+  progress: 35,
+  qrCode: 'https://www.naiveui.com/',
+  rating: 3,
+  role: '',
+  tags: ['OpenPage', 'Vue'],
+  team: null,
+  tenant: '',
+  time: null,
+  total: null,
+  username: '',
+  years: 3,
 }

@@ -46,7 +46,6 @@ export const preferenceSection: ComponentSchema = {
           type: 'select',
           name: 'mode',
           label: '工作模式',
-          required: true,
           props: {
             options: [
               { label: '专注模式', value: 'focus' },
@@ -88,7 +87,6 @@ export const preferenceSection: ComponentSchema = {
           type: 'radioGroup',
           name: 'role',
           label: '用户角色',
-          required: true,
           props: {
             options: [
               { label: '普通成员', value: 'member' },
@@ -102,7 +100,6 @@ export const preferenceSection: ComponentSchema = {
           type: 'checkboxGroup',
           name: 'channels',
           label: '通知渠道',
-          required: true,
           props: {
             options: [
               { label: '站内信', value: 'site' },
@@ -128,7 +125,6 @@ export const preferenceSection: ComponentSchema = {
           type: 'switch',
           name: 'agreement',
           label: '接受协作协议',
-          required: true,
         },
       ],
     },

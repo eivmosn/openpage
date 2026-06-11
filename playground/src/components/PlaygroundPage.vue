@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { UiAdapter } from '@openpage/core'
+import type { OpenPageComponents } from '@openpage/core'
 import { Page } from '@openpage/core'
 import { NButton, NScrollbar, NTooltip, useMessage } from 'naive-ui'
 import { computed, onBeforeUnmount, shallowRef, useTemplateRef } from 'vue'
@@ -11,7 +11,7 @@ import { createStressTestData } from '../stress/createStressTestData'
 import MonacoEditor from './monaco-editor'
 
 defineProps<{
-  adapter: UiAdapter
+  components: OpenPageComponents
 }>()
 
 const message = useMessage()
@@ -24,7 +24,7 @@ const { source: stateSource, state, syncStateSource } = useStateEditor(testState
 const { activeDivider, gridTemplateColumns, isResizing, startResize } = useResizablePanels(playground)
 const isLoadingMockState = shallowRef(false)
 const isLoadingStressTest = shallowRef(false)
-const stressFieldCount = shallowRef(1_000)
+const stressFieldCount = shallowRef(500)
 let mockRequestTimer: ReturnType<typeof setTimeout> | undefined
 
 /**
@@ -112,7 +112,7 @@ onBeforeUnmount(() => {
       <NScrollbar class="playground__preview-scrollbar">
         <div class="openpage-shell">
           <Page
-            :adapter="adapter"
+            :components="components"
             :schema="schema"
             :state="state"
             :platform="platform"

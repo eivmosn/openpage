@@ -6,7 +6,7 @@ export interface StressTestData {
 }
 
 const GENERATION_BATCH_SIZE = 500
-const MAX_STRESS_FIELD_COUNT = 1_000
+const MAX_STRESS_FIELD_COUNT = 10000
 
 /**
  * 异步生成指定数量的表单字段压力测试数据。
@@ -17,14 +17,14 @@ const MAX_STRESS_FIELD_COUNT = 1_000
 export async function createStressTestData(fieldCount: number): Promise<StressTestData> {
   const normalizedFieldCount = normalizeFieldCount(fieldCount)
   const children: ComponentSchema[] = []
-  const form: Record<string, unknown> = {}
+  const state: Record<string, unknown> = {}
 
   for (let start = 0; start < normalizedFieldCount; start += GENERATION_BATCH_SIZE) {
     const end = Math.min(start + GENERATION_BATCH_SIZE, normalizedFieldCount)
 
     for (let index = start; index < end; index++) {
       children.push(createStressField(index))
-      assignStressState(form, index)
+      assignStressState(state, index)
     }
 
     await yieldToMainThread()
@@ -37,15 +37,12 @@ export async function createStressTestData(fieldCount: number): Promise<StressTe
       children: [
         {
           id: 'stress-form',
-          type: 'form',
-          name: 'stressForm',
+          type: 'div',
           children,
         },
       ],
     },
-    state: {
-      stressForm: form,
-    },
+    state,
   }
 }
 
@@ -101,8 +98,8 @@ function createInputField(index: number): ComponentSchema {
     type: 'input',
     name: `field-${index}`,
     label: `文本字段 ${index}`,
-    disabled: index % 97 === 0 ? '{{ stressForm["field-1"] === true }}' : undefined,
-    visible: index % 101 === 0 ? '{{ stressForm["field-2"] !== "hidden" }}' : undefined,
+    disabled: index % 97 === 0 ? '{{ state["field-1"] === true }}' : undefined,
+    visible: index % 101 === 0 ? '{{ state["field-2"] !== "hidden" }}' : undefined,
     props: {
       placeholder: `field-${index}`,
     },
@@ -137,7 +134,7 @@ function createComputedField(index: number): ComponentSchema {
     type: 'inputNumber',
     name: `field-${index}`,
     label: `计算字段 ${index}`,
-    computedValue: `{{ sum(stressForm["field-${index - 1}"], stressForm["field-${index - 2}"]) }}`,
+    computedValue: `{{ sum(state["field-${index - 1}"], state["field-${index - 2}"]) }}`,
   }
 }
 
@@ -186,7 +183,7 @@ function createLinkageField(index: number): ComponentSchema {
       onchange: {
         type: 'static',
         dependency: {
-          [`stressForm.field-${index + 1}`]: '{{ $event?.targetValue }}',
+          [`field-${index + 1}`]: '{{ $event?.targetValue }}',
         },
       },
     },
@@ -196,10 +193,10 @@ function createLinkageField(index: number): ComponentSchema {
 /**
  * 为指定索引生成随机初始 State。
  *
- * @param form 压力测试表单 State。
+ * @param state 压力测试 State。
  * @param index 当前字段索引。
  */
-function assignStressState(form: Record<string, unknown>, index: number): void {
+function assignStressState(state: Record<string, unknown>, index: number): void {
   const key = `field-${index}`
 
   if (index >= 2 && index % 20 === 0) {
@@ -207,21 +204,21 @@ function assignStressState(form: Record<string, unknown>, index: number): void {
   }
 
   if (index % 25 === 0) {
-    form[key] = `option-${Math.random() > 0.5 ? 'a' : 'b'}-${index}`
+    state[key] = `option-${Math.random() > 0.5 ? 'a' : 'b'}-${index}`
     return
   }
 
   if (index % 10 === 0) {
-    form[key] = Math.random() > 0.5
+    state[key] = Math.random() > 0.5
     return
   }
 
   if (index % 3 === 0) {
-    form[key] = Math.floor(Math.random() * 10_000)
+    state[key] = Math.floor(Math.random() * 10_000)
     return
   }
 
-  form[key] = `随机值-${Math.floor(Math.random() * 100_000)}`
+  state[key] = `随机值-${Math.floor(Math.random() * 100_000)}`
 }
 
 /**
