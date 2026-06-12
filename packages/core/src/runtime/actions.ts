@@ -1,5 +1,5 @@
 import type { CompiledComponent } from '../types/compiled'
-import type { RuntimeComponentPatch, RuntimeContext } from '../types/runtime'
+import type { RuntimeComponentPatch, RuntimeContext, RuntimeFormSubmitResult } from '../types/runtime'
 import type { EventSchema, StaticEventActionSchema } from '../types/schema'
 import type { ValueRuntimeHelpers } from './helpers'
 import { runScript } from '@openpage/script-runner'
@@ -143,5 +143,30 @@ async function runFormServiceAction(context: RuntimeContext, actionName: keyof N
     return false
   }
 
-  return await action()
+  const result = await action()
+
+  if (actionName !== 'submit') {
+    return Boolean(result)
+  }
+
+  return handleSubmitFormResult(context, result)
+}
+
+/**
+ * 处理表单提交校验结果。
+ *
+ * @param context 当前渲染器运行时上下文。
+ * @param result 表单服务返回结果。
+ * @returns 返回表单是否校验通过。
+ */
+function handleSubmitFormResult(context: RuntimeContext, result: boolean | RuntimeFormSubmitResult): boolean {
+  if (typeof result === 'boolean') {
+    return result
+  }
+
+  if (!result.valid && result.message) {
+    context.services.message?.error?.(result.message)
+  }
+
+  return result.valid
 }

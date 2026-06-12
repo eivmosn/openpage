@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { FormInst } from 'naive-ui'
+import type { FormInst, FormValidationError } from 'naive-ui'
 import type { UiFormWrapperProps } from '../../types'
 import { getModelKey, getModelValue } from '@openpage/core'
 import { NForm } from 'naive-ui'
@@ -56,13 +56,18 @@ function unregisterFormService(
  *
  * @returns 返回表单是否校验通过。
  */
-async function submit(): Promise<boolean> {
+async function submit(): Promise<{ message?: string, valid: boolean }> {
   try {
     await formRef.value?.validate()
-    return true
+    return {
+      valid: true,
+    }
   }
-  catch {
-    return false
+  catch (error) {
+    return {
+      message: resolveValidationMessage(error),
+      valid: false,
+    }
   }
 }
 
@@ -95,6 +100,28 @@ function resolveFormModel(): Record<string, unknown> {
   }
 
   return model
+}
+
+/**
+ * 解析校验错误文案。
+ *
+ * @param error Naive UI 校验抛出的错误。
+ * @returns 返回第一条可展示的校验文案。
+ */
+function resolveValidationMessage(error: unknown): string | undefined {
+  if (!Array.isArray(error)) {
+    return undefined
+  }
+
+  for (const errors of error as FormValidationError[]) {
+    const message = errors[0]?.message
+
+    if (typeof message === 'string' && message.length > 0) {
+      return message
+    }
+  }
+
+  return undefined
 }
 </script>
 

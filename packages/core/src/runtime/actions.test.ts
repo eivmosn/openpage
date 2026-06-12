@@ -68,4 +68,27 @@ describe('runActions', () => {
     expect(context.services.notifyStateChange).not.toHaveBeenCalled()
     expect(context.services.message?.error).toHaveBeenCalledWith('OpenPage script runtime error: boom')
   })
+
+  it('shows validation message from submitForm result', async () => {
+    const context = createRuntimeContext({
+      submitted: false,
+    })
+
+    context.services.form = {
+      reset: () => true,
+      submit: () => ({
+        message: '请填写用户名',
+        valid: false,
+      }),
+    }
+
+    await runActions(`
+      const valid = await submitForm()
+      if (!valid) return
+      submitted = true
+    `, context)
+
+    expect(context.state.submitted).toBe(false)
+    expect(context.services.message?.error).toHaveBeenCalledWith('请填写用户名')
+  })
 })

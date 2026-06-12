@@ -25,7 +25,12 @@ export interface RuntimeMessageService {
 
 export interface RuntimeFormService {
   reset: () => Promise<boolean> | boolean
-  submit: () => Promise<boolean> | boolean
+  submit: () => Promise<RuntimeFormSubmitResult> | RuntimeFormSubmitResult
+}
+
+export interface RuntimeFormSubmitResult {
+  message?: string
+  valid: boolean
 }
 
 export interface RuntimeServices {
