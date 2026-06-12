@@ -51,6 +51,19 @@ export const advancedSection: ComponentSchema = {
             valueFormat: 'yyyy-MM-dd',
           },
           required: true,
+          description: '支持描述字段换行\n换行展示',
+        },
+        {
+          id: 'range',
+          type: 'daterange',
+          name: 'start,end',
+          label: '工作年限',
+          description: '支持两个字段绑定\n直接配置 star,name',
+          props: {
+            placeholder: '请选择工作年限',
+            valueFormat: 'yyyy-MM-dd',
+          },
+          required: true,
         },
         {
           id: 'loginAt',

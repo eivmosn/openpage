@@ -47,6 +47,19 @@ export const testSchema: PageSchema = {
                       type: 'button',
                       label: '暂存',
                       props: {
+                        popconfirm: {
+                          positiveText: '确认',
+                          negativeText: '取消',
+                          text: '文字内容',
+                          showIcon: true,
+                          customIcon: '',
+                          trigger: 'click',
+                        },
+                        tooltip: {
+                          text: '我是悬浮提示内容',
+                          trigger: 'click',
+                          maxWidth: 300,
+                        },
                         type: 'default',
                       },
                       events: {
@@ -61,6 +74,10 @@ export const testSchema: PageSchema = {
                       type: 'button',
                       label: '重置',
                       props: {
+                        tooltip: {
+                          text: '清空当前页面状态',
+                          maxWidth: 240,
+                        },
                         type: 'warning',
                       },
                       events: {
@@ -92,7 +109,6 @@ export const testSchema: PageSchema = {
                         onclick: `
                           const valid = await submitForm()
                           if (!valid) {
-                            message.error('请先完成必填项')
                             return
                           }
                           console.log('提交数据：', { username, phone, email, channels, tags })
@@ -155,7 +171,8 @@ export const testState: Record<string, unknown> = {
   mention: '',
   mode: '',
   nativeContact: '',
-  otp: [],
+  otp: '',
+  otpArray: ['1', '2'],
   password: '',
   phone: '',
   profileImages: [
@@ -179,7 +196,12 @@ export const testState: Record<string, unknown> = {
   qrCode: 'https://www.naiveui.com/',
   rating: 3,
   role: '',
-  tags: ['OpenPage', 'Vue'],
+  start: '',
+  end: '',
+  tags: [
+    { label: 'OpenPage', value: 'OpenPage' },
+    { label: 'Vue', value: 'Vue' },
+  ],
   team: null,
   tenant: '',
   time: null,

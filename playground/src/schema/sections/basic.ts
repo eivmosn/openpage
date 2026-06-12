@@ -49,7 +49,9 @@ export const basicSection: ComponentSchema = {
           props: {
             options: ['OpenPage Cloud', 'OpenPage Studio', 'OpenPage Enterprise'],
             placeholder: '请输入或选择租户',
+            message: '租户必填: 支持自定义必填文字 message 属性',
           },
+          required: true,
         },
         {
           id: 'total',
@@ -60,6 +62,7 @@ export const basicSection: ComponentSchema = {
           props: {
             placeholder: '自动计算 A收款 + B收款',
           },
+          required: true,
         },
         {
           id: 'a',
@@ -92,11 +95,11 @@ export const basicSection: ComponentSchema = {
           id: 'native-contact',
           type: 'nativeInput',
           name: 'nativeContact',
-          label: '原生联系人',
+          label: '自定义组件',
           required: true,
           props: {
             autocomplete: 'name',
-            message: '请填写原生联系人',
+            message: '自定义组件支持无缝接入验证',
             placeholder: '测试 NativeInput 必填校验',
           },
         },
@@ -115,7 +118,7 @@ export const basicSection: ComponentSchema = {
           name: 'otp',
           label: '验证码',
           props: {
-            length: 6,
+            length: 4,
           },
         },
         {

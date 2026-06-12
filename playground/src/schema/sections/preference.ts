@@ -109,6 +109,15 @@ export const preferenceSection: ComponentSchema = {
           },
         },
         {
+          id: 'otp-array',
+          type: 'inputOTP',
+          name: 'otpArray',
+          label: '数组验证码',
+          props: {
+            length: 4,
+          },
+        },
+        {
           id: 'tags',
           type: 'dynamicTags',
           name: 'tags',
