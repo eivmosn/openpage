@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import type { FormInst } from 'naive-ui'
 import type { UiFormWrapperProps } from '../../types'
+import { getModelKey, getModelValue } from '@openpage/core'
 import { NForm } from 'naive-ui'
-import { onBeforeUnmount, useTemplateRef } from 'vue'
+import { computed, onBeforeUnmount, useTemplateRef } from 'vue'
 
 defineOptions({
   name: 'OpenPageNaiveForm',
@@ -11,6 +12,7 @@ defineOptions({
 
 const props = defineProps<UiFormWrapperProps>()
 const formRef = useTemplateRef<FormInst>('form')
+const formModel = computed(resolveFormModel)
 
 registerFormService(props.context, {
   reset,
@@ -73,12 +75,33 @@ function reset(): boolean {
   formRef.value?.restoreValidation()
   return true
 }
+
+/**
+ * 解析 Naive UI 表单校验模型。
+ *
+ * @returns 返回包含单路径字段和多路径虚拟字段的表单模型。
+ */
+function resolveFormModel(): Record<string, unknown> {
+  const model: Record<string, unknown> = {
+    ...props.context.state,
+  }
+
+  for (const component of props.context.compiled.components.values()) {
+    if (!component.model) {
+      continue
+    }
+
+    model[getModelKey(component.model)] = getModelValue(props.context.state, component.model)
+  }
+
+  return model
+}
 </script>
 
 <template>
   <NForm
     ref="form"
-    :model="props.context.state"
+    :model="formModel"
     label-placement="left"
     label-width="88"
     require-mark-placement="right-hanging"

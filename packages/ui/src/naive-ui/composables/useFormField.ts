@@ -2,6 +2,7 @@ import type { FormItemRule } from 'naive-ui'
 import type { ComputedRef } from 'vue'
 import type { UiComponentProps } from '../../types'
 import type { InputType } from '../utils/resolve'
+import { getModelKey } from '@openpage/core'
 import { computed } from 'vue'
 import { resolveInputType } from '../utils/resolve'
 
@@ -17,6 +18,7 @@ export interface NaiveFormFieldBinding {
   type: ComputedRef<InputType>
   placeholder: ComputedRef<string>
   showFeedback: ComputedRef<boolean>
+  description: ComputedRef<string>
 }
 
 export interface UseFormFieldOptions {
@@ -43,6 +45,8 @@ export function useFormField(props: UiComponentProps, options: UseFormFieldOptio
   const placeholder = computed(resolvePlaceholder)
   const showFeedback = computed(resolveShowFeedback)
 
+  const description = computed(() => props.component.description as string)
+
   /**
    * 解析字段是否禁用。
    *
@@ -68,7 +72,9 @@ export function useFormField(props: UiComponentProps, options: UseFormFieldOptio
    * @returns 返回字段模型路径。
    */
   function resolvePath(): string | undefined {
-    return props.component.model?.path
+    const model = props.component.model
+
+    return model ? getModelKey(model) : undefined
   }
 
   /**
@@ -112,6 +118,7 @@ export function useFormField(props: UiComponentProps, options: UseFormFieldOptio
         required: true,
         message: String(props.component.props.message || `${label.value || '该字段'}不能为空`),
         trigger: ['blur', 'change'],
+        validator: validateRequiredValue,
       })
     }
 
@@ -125,6 +132,21 @@ export function useFormField(props: UiComponentProps, options: UseFormFieldOptio
     }
 
     return rules.length ? rules : undefined
+  }
+
+  /**
+   * 校验必填字段值。
+   *
+   * @param _rule 当前校验规则。
+   * @param value 当前字段值。
+   * @returns 返回是否校验通过。
+   */
+  function validateRequiredValue(_rule: FormItemRule, value: unknown): boolean {
+    if (Array.isArray(value)) {
+      return value.length > 0 && value.every(item => item !== undefined && item !== null && item !== '')
+    }
+
+    return value !== undefined && value !== null && value !== ''
   }
 
   /**
@@ -175,6 +197,7 @@ export function useFormField(props: UiComponentProps, options: UseFormFieldOptio
     type,
     placeholder,
     showFeedback,
+    description,
   }
 }
 

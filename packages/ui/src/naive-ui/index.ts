@@ -7,6 +7,7 @@ import Carousel from './components/Carousel.vue'
 import CheckboxGroup from './components/CheckboxGroup.vue'
 import ColorPicker from './components/ColorPicker.vue'
 import Date from './components/Date.vue'
+import DateRange from './components/DateRange.vue'
 import Datetime from './components/Datetime.vue'
 import Div from './components/Div.vue'
 import DynamicTags from './components/DynamicTags.vue'
@@ -51,6 +52,7 @@ export const defaultComponents = {
   treeSelect: withFormItem(TreeSelect),
   datetime: withFormItem(Datetime),
   date: withFormItem(Date),
+  daterange: withFormItem(DateRange),
   timePicker: withFormItem(TimePicker),
   switch: withFormItem(Switch),
   checkboxGroup: withFormItem(CheckboxGroup),
