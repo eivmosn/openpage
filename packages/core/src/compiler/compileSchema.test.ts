@@ -29,6 +29,24 @@ describe('compileSchema', () => {
     expect(compiled.componentNames.get('search.keyword')).toBe('keyword')
   })
 
+  it('binds comma separated component names to multiple state paths', () => {
+    const compiled = compileSchema({
+      id: 'page',
+      children: [
+        {
+          id: 'date-range',
+          type: 'daterange',
+          name: 'start,end',
+        },
+      ],
+    })
+
+    expect(compiled.components.get('date-range')?.model).toEqual({
+      paths: ['start', 'end'],
+    })
+    expect(compiled.componentNames.get('start,end')).toBe('date-range')
+  })
+
   it('supports configurable dynamic component fields', () => {
     const compiled = compileSchema({
       id: 'page',

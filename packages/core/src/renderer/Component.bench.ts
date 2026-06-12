@@ -271,7 +271,7 @@ function resolveRuntimeComponentLegacy(runtimeContext: RuntimeContext, currentCo
     id: currentComponent.id,
     events: {
       ...currentComponent.events,
-      ...patch.events,
+      ...(patch.events || {}),
     },
     children: patch.children || currentComponent.children,
     model: patch.model || currentComponent.model,

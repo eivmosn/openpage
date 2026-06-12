@@ -11,6 +11,7 @@ export interface CompiledPage {
 }
 
 export interface CompiledComponent {
+  [key: string]: unknown
   id: string
   type: string
   name?: string
@@ -28,9 +29,7 @@ export interface CompiledComponent {
   dynamicProps: readonly CompiledDynamicProp[]
   children: string[]
   events: Record<string, EventSchema>
-  model?: {
-    path: string
-  }
+  model?: CompiledComponentModel
   dynamic: CompiledComponentDynamicFields
   dynamicResolvers: CompiledComponentDynamicResolvers
   interactionClassName?: string
@@ -44,3 +43,7 @@ export interface CompiledComponentDynamicFields {
 export type CompiledDynamicProp = readonly [key: string, resolveValue: ExpressionValueResolver]
 
 export type CompiledComponentDynamicResolvers = Record<string, ExpressionValueResolver>
+
+export type CompiledComponentModel
+  = | { path: string }
+    | { paths: readonly string[] }

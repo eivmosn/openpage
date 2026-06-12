@@ -26,6 +26,32 @@ function createRuntimeContext(state: Record<string, unknown>): RuntimeContext {
 }
 
 describe('expression runtime', () => {
+  it('returns undefined for invalid expression syntax without throwing', () => {
+    const context = createRuntimeContext({
+      a: 1,
+    })
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    expect(resolveExpressionValue('{{ a + }}', context)).toBeUndefined()
+    expect(resolveExpressionValue('{{ a + }}', context)).toBeUndefined()
+    expect(warn).toHaveBeenCalledTimes(1)
+
+    warn.mockRestore()
+  })
+
+  it('returns undefined for runtime expression errors without throwing', () => {
+    const context = createRuntimeContext({
+      user: undefined,
+    })
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    expect(resolveExpressionValue('{{ user.name }}', context)).toBeUndefined()
+    expect(resolveExpressionValue('{{ user.name }}', context)).toBeUndefined()
+    expect(warn).toHaveBeenCalledTimes(1)
+
+    warn.mockRestore()
+  })
+
   it('resolves missing state identifiers as undefined', () => {
     const context = createRuntimeContext({})
 

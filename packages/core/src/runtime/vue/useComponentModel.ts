@@ -2,7 +2,7 @@ import type { ComputedRef } from 'vue'
 import type { CompiledComponent } from '../../types/compiled'
 import type { RuntimeContext } from '../../types/runtime'
 import { computed } from 'vue'
-import { getByPath, setByPath } from '../../utils/path'
+import { getModelValue, setModelValue } from '../model'
 
 export interface ComponentModelBinding {
   value: ComputedRef<unknown>
@@ -22,7 +22,7 @@ export function useComponentModel(component: ComputedRef<CompiledComponent>, con
       return undefined
     }
 
-    return getByPath(context.state, component.value.model.path)
+    return getModelValue(context.state, component.value.model)
   })
 
   /**
@@ -35,7 +35,7 @@ export function useComponentModel(component: ComputedRef<CompiledComponent>, con
       return
     }
 
-    setByPath(context.state, component.value.model.path, nextValue)
+    setModelValue(context.state, component.value.model, nextValue)
     context.services.notifyStateChange()
   }
 

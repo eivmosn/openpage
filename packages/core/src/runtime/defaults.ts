@@ -1,7 +1,7 @@
 import type { CompiledComponent } from '../types/compiled'
 import type { RuntimeContext } from '../types/runtime'
-import { getByPath, setByPath } from '../utils/path'
 import { resolveExpressionValue } from './expression'
+import { getModelValue, setModelValue } from './model'
 
 /**
  * 应用所有组件的默认值配置。
@@ -32,11 +32,11 @@ function applyComponentDefaultValue(context: RuntimeContext, component: Compiled
     return false
   }
 
-  if (!isEmptyDefaultTarget(getByPath(context.state, component.model.path))) {
+  if (!isEmptyDefaultTarget(getModelValue(context.state, component.model))) {
     return false
   }
 
-  setByPath(context.state, component.model.path, resolveExpressionValue(component.defaultValue, context))
+  setModelValue(context.state, component.model, resolveExpressionValue(component.defaultValue, context))
   return true
 }
 

@@ -5,6 +5,7 @@ export { collectPageInteractionCss, createInteractionClassName, omitInteractionP
 export { interactionPresets } from './interactions/presets'
 export type { InteractionPreset, InteractionStyle, InteractionStyleObject, InteractionStyleValue } from './interactions/types'
 export { Page } from './renderer/Page'
+export { getModelKey, getModelValue } from './runtime/model'
 export type { CompiledComponent, CompiledPage } from './types/compiled'
 export type { PageContext, PageInstance, PagePlatform } from './types/page'
 export type {

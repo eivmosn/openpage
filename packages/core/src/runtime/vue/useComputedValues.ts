@@ -2,8 +2,8 @@ import type { EffectScope, ShallowRef } from 'vue'
 import type { CompiledComponent } from '../../types/compiled'
 import type { RuntimeContext } from '../../types/runtime'
 import { effectScope, watch } from 'vue'
-import { getByPath, setByPath } from '../../utils/path'
 import { resolveExpressionValue } from '../expression'
+import { getModelKey, getModelValue, isModelValueEqual, setModelValue } from '../model'
 
 interface ComputedUpdateGuard {
   notifyPending: boolean
@@ -68,7 +68,7 @@ function createComputedScope(context: RuntimeContext): EffectScope {
 
   scope.run(() => {
     for (const component of context.compiled.components.values()) {
-      if (component.computedValue === undefined || !component.model?.path) {
+      if (component.computedValue === undefined || !component.model) {
         continue
       }
 
@@ -93,13 +93,19 @@ function createComputedScope(context: RuntimeContext): EffectScope {
  * @param value 最新计算结果。
  */
 function syncComputedValue(component: CompiledComponent, context: RuntimeContext, value: unknown): void {
-  const path = component.model?.path
+  const model = component.model
 
-  if (!path || Object.is(getByPath(context.state, path), value) || !allowComputedUpdate(context, path)) {
+  if (!model) {
     return
   }
 
-  setByPath(context.state, path, value)
+  const modelKey = getModelKey(model)
+
+  if (isModelValueEqual(getModelValue(context.state, model), value) || !allowComputedUpdate(context, modelKey)) {
+    return
+  }
+
+  setModelValue(context.state, model, value)
   scheduleStateNotification(context)
 }
 

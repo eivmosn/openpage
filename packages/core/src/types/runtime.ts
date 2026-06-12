@@ -1,9 +1,14 @@
-import type { CompiledComponent, CompiledPage } from './compiled'
+import type { CompiledComponent, CompiledComponentModel, CompiledPage } from './compiled'
 
 export type RuntimeComponentPatch = Partial<Omit<
   CompiledComponent,
-  'dynamic' | 'dynamicFieldKeys' | 'dynamicProps' | 'dynamicResolvers' | 'dynamicValues' | 'id' | 'interactionClassName' | 'staticProps'
->>
+  'children' | 'dynamic' | 'dynamicFieldKeys' | 'dynamicProps' | 'dynamicResolvers' | 'dynamicValues' | 'events' | 'id' | 'interactionClassName' | 'model' | 'props' | 'staticProps'
+>> & {
+  children?: string[]
+  events?: Record<string, CompiledComponent['events'][string]>
+  model?: CompiledComponentModel
+  props?: Record<string, unknown>
+}
 export type ResolvedRuntimeComponentPatch = RuntimeComponentPatch & Pick<
   CompiledComponent,
   'dynamic' | 'dynamicFieldKeys' | 'dynamicProps' | 'dynamicResolvers' | 'dynamicValues' | 'staticProps'

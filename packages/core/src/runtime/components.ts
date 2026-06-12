@@ -104,16 +104,16 @@ function mergeComponentPatch(
   previous: ResolvedRuntimeComponentPatch | undefined,
   patch: RuntimeComponentPatch,
 ): ResolvedRuntimeComponentPatch {
-  const nextPatch = {
+  const nextPatch: RuntimeComponentPatch = {
     ...previous,
     ...patch,
     props: {
-      ...previous?.props,
-      ...patch.props,
+      ...(previous?.props || {}),
+      ...(patch.props || {}),
     },
     events: {
-      ...previous?.events,
-      ...patch.events,
+      ...(previous?.events || {}),
+      ...(patch.events || {}),
     },
   }
 
@@ -125,7 +125,7 @@ function mergeComponentPatch(
   const dynamicValues = resolveDynamicValues(component, nextPatch)
   const dynamicResolvers = resolveDynamicFieldResolvers(component.dynamicFieldKeys, dynamicValues)
 
-  const resolvedPatch = {
+  const resolvedPatch: ResolvedRuntimeComponentPatch = {
     ...nextPatch,
     props: compiledProps.props,
     dynamic: {
@@ -137,8 +137,9 @@ function mergeComponentPatch(
     dynamicResolvers,
     staticProps: compiledProps.staticProps,
     dynamicProps: compiledProps.dynamicProps,
+    resolvedComponent: component,
   }
-  const resolvedComponent = {
+  const resolvedComponent: CompiledComponent = {
     ...component,
     ...resolvedPatch,
     id: component.id,
@@ -146,8 +147,8 @@ function mergeComponentPatch(
       ...component.events,
       ...resolvedPatch.events,
     },
-    children: resolvedPatch.children || component.children,
-    model: resolvedPatch.model || component.model,
+    children: nextPatch.children || component.children,
+    model: nextPatch.model || component.model,
   }
 
   return {

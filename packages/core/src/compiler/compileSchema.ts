@@ -90,9 +90,11 @@ function compileComponent(
     visible: component.visible,
     // 兼容保留的禁用字段，最终渲染值会由 Component 统一解析后覆盖。
     disabled: component.disabled,
-    // 默认值配置，创建上下文时会按 model.path 写入空状态。
+    // 默认值配置，创建上下文时会按 model 写入空状态。
     defaultValue: component.defaultValue,
-    // 计算值表达式，由 useComputedValues 集中创建 watcher 并同步到 model.path。
+    // description label 的描述
+    description: component.description,
+    // 计算值表达式，由 useComputedValues 集中创建 watcher 并同步到 model。
     computedValue: component.computedValue,
     // 表单必填配置，支持静态布尔值和动态表达式。
     required: component.required,
@@ -108,7 +110,7 @@ function compileComponent(
     children,
     // 事件配置，运行时触发时交给 runActions 执行。
     events: markRaw(component.events || {}),
-    // 自动推导出的状态绑定路径，例如 username 或 search.keyword。
+    // 自动推导出的状态绑定路径，例如 username、search.keyword 或 start,end。
     model,
     // 动态字段索引摘要，主要用于调试和运行时快速判断哪些字段/props 是动态的。
     dynamic: markRaw({
@@ -139,9 +141,36 @@ function resolveComponentModel(component: ComponentSchema): CompiledComponent['m
     return undefined
   }
 
+  const paths = resolveNamePathList(component.name)
+
+  if (paths) {
+    return {
+      paths,
+    }
+  }
+
   return {
     path: component.name,
   }
+}
+
+/**
+ * 将组件 name 解析为多状态路径列表。
+ *
+ * @param name 组件名称配置。
+ * @returns 返回多路径列表；不是多路径配置时返回空值。
+ */
+function resolveNamePathList(name: string): readonly string[] | undefined {
+  if (!name.includes(',')) {
+    return undefined
+  }
+
+  const paths = name
+    .split(',')
+    .map(path => path.trim())
+    .filter(path => path.length > 0)
+
+  return paths.length > 1 ? Object.freeze(paths) : undefined
 }
 
 /**

@@ -16,6 +16,7 @@ export type ExpressionValueResolver = (
 ) => unknown
 
 const expressionCache = new Map<string, ExpressionRunner>()
+const warnedExpressionErrors = new Set<string>()
 const stateScopeCache = new WeakMap<Record<string, unknown>, Record<string, unknown>>()
 
 /**
@@ -257,13 +258,71 @@ function isReservedExpressionIdentifier(key: string): boolean {
  * @returns 返回可复用的表达式执行函数。
  */
 function compileExpression(expression: string): ExpressionRunner {
-  // eslint-disable-next-line no-new-func
-  return new Function(
-    'state',
-    'helpers',
-    'scope',
-    `with (state) { with (helpers) { with (scope) { return (${expression}) } } }`,
-  ) as ExpressionRunner
+  try {
+    // eslint-disable-next-line no-new-func
+    const runExpression = new Function(
+      'state',
+      'helpers',
+      'scope',
+      `with (state) { with (helpers) { with (scope) { return (${expression}) } } }`,
+    ) as ExpressionRunner
+
+    return createSafeExpressionRunner(expression, runExpression)
+  }
+  catch (error) {
+    warnExpressionError(expression, 'compile', error)
+    return () => undefined
+  }
+}
+
+/**
+ * 创建带异常隔离的表达式执行器。
+ *
+ * @param expression 模板表达式内容。
+ * @param runExpression 原始表达式执行器。
+ * @returns 返回不会向外抛错的表达式执行器。
+ */
+function createSafeExpressionRunner(expression: string, runExpression: ExpressionRunner): ExpressionRunner {
+  return (state, helpers, scope) => {
+    try {
+      return runExpression(state, helpers, scope)
+    }
+    catch (error) {
+      warnExpressionError(expression, 'runtime', error)
+      return undefined
+    }
+  }
+}
+
+/**
+ * 输出表达式错误警告，并对相同表达式相同阶段去重。
+ *
+ * @param expression 模板表达式内容。
+ * @param phase 错误发生阶段。
+ * @param error 原始错误。
+ */
+function warnExpressionError(expression: string, phase: 'compile' | 'runtime', error: unknown): void {
+  const message = resolveErrorMessage(error)
+  const warningKey = `${phase}:${expression}:${message}`
+
+  if (warnedExpressionErrors.has(warningKey)) {
+    return
+  }
+
+  warnedExpressionErrors.add(warningKey)
+  console.warn(`[openpage] expression ${phase} error: ${message}`, {
+    expression,
+  })
+}
+
+/**
+ * 解析错误消息。
+ *
+ * @param error 原始错误。
+ * @returns 返回可读错误消息。
+ */
+function resolveErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error)
 }
 
 /**
