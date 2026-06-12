@@ -1,6 +1,6 @@
-* {
+/* * {
   box-sizing: border-box;
-}
+} */
 
 html,
 body,
@@ -30,6 +30,7 @@ body {
   color: #18181b;
 }
 .openpage-shell {
-  min-width: 780px;
-  padding: 4rem;
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
 }

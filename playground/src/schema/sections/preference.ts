@@ -119,6 +119,7 @@ export const preferenceSection: ComponentSchema = {
           type: 'switch',
           name: 'admin',
           label: '管理员权限',
+          labelWidth: 95,
         },
         {
           id: 'agreement',

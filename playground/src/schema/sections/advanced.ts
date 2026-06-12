@@ -36,7 +36,7 @@ export const advancedSection: ComponentSchema = {
           alignItems: 'start',
           display: 'grid',
           gap: '16px 24px',
-          gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+          gridTemplateColumns: 'repeat(1, minmax(0, 1fr))',
           padding: '14px',
         },
       },
@@ -50,6 +50,7 @@ export const advancedSection: ComponentSchema = {
             placeholder: '请选择入职日期',
             valueFormat: 'yyyy-MM-dd',
           },
+          required: true,
         },
         {
           id: 'loginAt',
@@ -60,6 +61,7 @@ export const advancedSection: ComponentSchema = {
             placeholder: '请选择预约时间',
             valueFormat: 'yyyy-MM-dd HH:mm:ss',
           },
+          required: '{{ birthday !== ""}}',
         },
         {
           id: 'time',
@@ -69,6 +71,7 @@ export const advancedSection: ComponentSchema = {
           props: {
             clearable: true,
           },
+          required: true,
         },
         {
           id: 'years',
@@ -112,6 +115,29 @@ export const advancedSection: ComponentSchema = {
           props: {
             size: 110,
             value: '{{ qrCode }}',
+          },
+        },
+        {
+          id: 'profile-images',
+          type: 'images',
+          name: 'profileImages',
+          label: '资料图片',
+          labelWidth: 95,
+          props: {
+            imageHeight: 104,
+            imageWidth: 104,
+          },
+        },
+        {
+          id: 'carousel',
+          type: 'carousel',
+          name: 'carousel',
+          label: '资料轮播',
+          props: {
+            height: 220,
+            interval: 3200,
+            loop: true,
+            showArrow: true,
           },
         },
       ],

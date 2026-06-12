@@ -3,24 +3,26 @@ import { computed, onBeforeUnmount, shallowRef } from 'vue'
 
 export interface ResizablePanels {
   activeDivider: Ref<number | undefined>
-  gridTemplateColumns: ComputedRef<string>
+  panelFlexBasis: ComputedRef<Record<string, string>>
   isResizing: Ref<boolean>
   startResize: (dividerIndex: number, event: PointerEvent) => void
 }
 
 /**
- * 创建三栏水平方向可拖拽面板状态。
+ * 创建三段式 flex 水平方向可拖拽面板状态。
  *
- * @param container 三栏面板容器元素引用。
- * @returns 返回网格列宽、拖拽状态和开始拖拽方法。
+ * @param container 三段式面板容器元素引用。
+ * @returns 返回面板 flex basis、拖拽状态和开始拖拽方法。
  */
 export function useResizablePanels(container: Ref<HTMLElement | null>): ResizablePanels {
   const panelPercents = shallowRef<[number, number, number]>([25, 50, 25])
   const activeDivider = shallowRef<number>()
   const isResizing = computed(() => activeDivider.value !== undefined)
-  const gridTemplateColumns = computed(() => (
-    `${panelPercents.value[0]}fr 2px ${panelPercents.value[1]}fr 2px ${panelPercents.value[2]}fr`
-  ))
+  const panelFlexBasis = computed(() => ({
+    '--playground-left-basis': `${panelPercents.value[0]}%`,
+    '--playground-center-basis': `${panelPercents.value[1]}%`,
+    '--playground-right-basis': `${panelPercents.value[2]}%`,
+  }))
 
   /**
    * 根据指针位置调整分割线相邻面板宽度。
@@ -81,7 +83,7 @@ export function useResizablePanels(container: Ref<HTMLElement | null>): Resizabl
 
   return {
     activeDivider,
-    gridTemplateColumns,
+    panelFlexBasis,
     isResizing,
     startResize,
   }

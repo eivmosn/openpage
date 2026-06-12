@@ -62,9 +62,13 @@ onMounted(async () => {
       bottom: 16,
       top: 16,
     },
+    scrollbar: {
+      horizontal: 'visible',
+      vertical: 'visible',
+    },
     scrollBeyondLastLine: false,
     smoothScrolling: true,
-    wordWrap: 'on',
+    wordWrap: 'off',
   })
 
   const textModel = monaco.editor.createModel(model.value, props.language)

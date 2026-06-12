@@ -4,8 +4,8 @@ import { basicSection } from './sections/basic'
 import { preferenceSection } from './sections/preference'
 
 export const testSchema: PageSchema = {
-  id: 'component-test-page',
-  title: '复杂表单组件测试',
+  id: 'test-page',
+  title: '复杂页面编排测试',
   children: [
     {
       id: 'page-layout',
@@ -16,8 +16,9 @@ export const testSchema: PageSchema = {
           type: 'div',
           props: {
             style: {
+              boxSizing: 'border-box',
               margin: '0 auto',
-              maxWidth: '1180px',
+              width: '100%',
             },
           },
           children: [
@@ -37,7 +38,7 @@ export const testSchema: PageSchema = {
                       display: 'flex',
                       gap: '14px',
                       justifyContent: 'center',
-                      padding: '28px 0 8px',
+                      margin: '10px 15px',
                     },
                   },
                   children: [
@@ -64,9 +65,13 @@ export const testSchema: PageSchema = {
                       },
                       events: {
                         onclick: `
+                          await resetForm()
                           username = ''
                           phone = ''
                           email = ''
+                          birthday = ''
+                          loginAt = ''
+                          time = null
                           description = ''
                           channels = []
                           tags = []
@@ -85,6 +90,11 @@ export const testSchema: PageSchema = {
                       },
                       events: {
                         onclick: `
+                          const valid = await submitForm()
+                          if (!valid) {
+                            message.error('请先完成必填项')
+                            return
+                          }
                           console.log('提交数据：', { username, phone, email, channels, tags })
                           message.success('提交成功')
                         `,
@@ -118,6 +128,23 @@ export const testState: Record<string, unknown> = {
   agreement: false,
   b: null,
   birthday: '',
+  carousel: [
+    {
+      label: '开放式协作空间',
+      type: 'url',
+      value: 'https://images.unsplash.com/photo-1497366754035-f200968a6e72?q=80&w=900&auto=format&fit=crop',
+    },
+    {
+      label: '团队项目会议',
+      type: 'url',
+      value: 'https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=900&auto=format&fit=crop',
+    },
+    {
+      label: '业务数据看板',
+      type: 'url',
+      value: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=900&auto=format&fit=crop',
+    },
+  ],
   channels: [],
   color: '#18a058',
   description: '',
@@ -127,9 +154,27 @@ export const testState: Record<string, unknown> = {
   loginAt: '',
   mention: '',
   mode: '',
+  nativeContact: '',
   otp: [],
   password: '',
   phone: '',
+  profileImages: [
+    {
+      label: '办公空间',
+      type: 'url',
+      value: 'https://images.unsplash.com/photo-1497366754035-f200968a6e72?q=80&w=600&auto=format&fit=crop',
+    },
+    {
+      label: '协作会议',
+      type: 'url',
+      value: 'https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=600&auto=format&fit=crop',
+    },
+    {
+      label: '产品看板',
+      type: 'url',
+      value: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=600&auto=format&fit=crop',
+    },
+  ],
   progress: 35,
   qrCode: 'https://www.naiveui.com/',
   rating: 3,

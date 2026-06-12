@@ -89,6 +89,18 @@ export const basicSection: ComponentSchema = {
           },
         },
         {
+          id: 'native-contact',
+          type: 'nativeInput',
+          name: 'nativeContact',
+          label: '原生联系人',
+          required: true,
+          props: {
+            autocomplete: 'name',
+            message: '请填写原生联系人',
+            placeholder: '测试 NativeInput 必填校验',
+          },
+        },
+        {
           id: 'password',
           type: 'password',
           name: 'password',

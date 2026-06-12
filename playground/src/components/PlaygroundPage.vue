@@ -11,17 +11,18 @@ import { createStressTestData } from '../stress/createStressTestData'
 import MonacoEditor from './monaco-editor'
 
 defineProps<{
-  components: OpenPageComponents
+  components?: OpenPageComponents
 }>()
 
 const message = useMessage()
 const platform = computed(() => ({
   message,
 }))
+
 const playground = useTemplateRef<HTMLElement>('playground')
 const { schema, source: schemaSource, syncSchemaSource } = useSchemaEditor(testSchema)
 const { source: stateSource, state, syncStateSource } = useStateEditor(testState)
-const { activeDivider, gridTemplateColumns, isResizing, startResize } = useResizablePanels(playground)
+const { activeDivider, panelFlexBasis, isResizing, startResize } = useResizablePanels(playground)
 const isLoadingMockState = shallowRef(false)
 const isLoadingStressTest = shallowRef(false)
 const stressFieldCount = shallowRef(500)
@@ -39,11 +40,8 @@ function loadMockState(): void {
   mockRequestTimer = setTimeout(() => {
     syncStateSource({
       ...state.value,
-      form: {
-        ...(state.value.form as Record<string, unknown>),
-        a: 1280,
-        b: 720,
-      },
+      a: 1280,
+      b: 720,
     })
     isLoadingMockState.value = false
   }, 1200)
@@ -79,11 +77,11 @@ onBeforeUnmount(() => {
     ref="playground"
     class="playground"
     :class="{ 'playground--resizing': isResizing }"
-    :style="{ '--playground-columns': gridTemplateColumns }"
+    :style="panelFlexBasis"
   >
     <section class="playground__panel playground__editor-panel">
       <header class="playground__panel-header">
-        <span>Schema</span>
+        <span>页面配置</span>
         <NTooltip :show-arrow="false">
           <template #trigger>
             <NButton
@@ -132,7 +130,7 @@ onBeforeUnmount(() => {
 
     <section class="playground__panel playground__editor-panel">
       <header class="playground__panel-header">
-        <span>State</span>
+        <span>页面状态</span>
         <NButton
           :disabled="isLoadingMockState"
           type="primary"
@@ -148,8 +146,8 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .playground {
-  display: grid;
-  grid-template-columns: var(--playground-columns);
+  display: flex;
+  flex-direction: row;
   height: 100vh;
   min-height: 0;
   overflow: hidden;
@@ -166,6 +164,7 @@ onBeforeUnmount(() => {
 }
 
 .playground__divider {
+  flex: 0 0 2px;
   background: #eee;
   cursor: e-resize;
   min-height: 0;
@@ -181,9 +180,22 @@ onBeforeUnmount(() => {
 .playground__panel {
   display: flex;
   flex-direction: column;
+  flex: 0 1 auto;
   min-height: 0;
   min-width: 0;
   overflow: hidden;
+}
+
+.playground__editor-panel:first-of-type {
+  flex-basis: var(--playground-left-basis);
+}
+
+.playground__preview-panel {
+  flex-basis: var(--playground-center-basis);
+}
+
+.playground__editor-panel:last-of-type {
+  flex-basis: var(--playground-right-basis);
 }
 
 .playground__editor-panel :deep(.monaco-editor-host) {
@@ -227,6 +239,7 @@ onBeforeUnmount(() => {
 .playground__preview-scrollbar {
   flex: 1;
   min-height: 0;
+  min-width: 0;
 }
 
 .openpage-shell {
@@ -235,15 +248,30 @@ onBeforeUnmount(() => {
     linear-gradient(90deg, #f4f4f5 1px, transparent 1px),
     #fafafa;
   background-size: 32px 32px;
+  box-sizing: border-box;
+  max-width: 100%;
   min-height: 100%;
+  min-width: 0;
+  overflow-x: hidden;
   padding: 20px;
+  width: 100%;
 }
 
 @media (max-width: 1100px) {
   .playground {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: repeat(3, minmax(360px, 1fr));
+    flex-direction: column;
     overflow: auto;
+  }
+
+  .playground__panel {
+    flex: 0 0 auto;
+    min-height: 360px;
+  }
+
+  .playground__editor-panel:first-of-type,
+  .playground__preview-panel,
+  .playground__editor-panel:last-of-type {
+    flex-basis: 360px;
   }
 
   .playground__divider {
