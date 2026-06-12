@@ -1,8 +1,9 @@
-import type { PropType } from 'vue'
+import type { CSSProperties, PropType } from 'vue'
 import type { OverlayProviderProps } from './types'
 import { computed, defineComponent, h, onBeforeUnmount, onMounted, Teleport, Transition, watchEffect } from 'vue'
 import OverlayPanel from './OverlayPanel.vue'
 import { overlay } from './useOverlay'
+import { formatCssUnit } from './utils'
 import { setOverlayZIndex } from './zIndex'
 
 export default defineComponent({
@@ -20,9 +21,32 @@ export default defineComponent({
       type: Object as PropType<OverlayProviderProps['contentWrapperProps']>,
       default: undefined,
     },
+    modalRadius: {
+      type: [Number, String] as PropType<OverlayProviderProps['modalRadius']>,
+      default: undefined,
+    },
+    drawerRadius: {
+      type: [Number, String] as PropType<OverlayProviderProps['drawerRadius']>,
+      default: undefined,
+    },
   },
   setup(props, { slots }) {
     const activeItems = computed(() => overlay.items)
+    const containerStyle = computed<CSSProperties>(() => {
+      const style: CSSProperties = {}
+      const modalRadius = formatCssUnit(props.modalRadius)
+      const drawerRadius = formatCssUnit(props.drawerRadius)
+
+      if (modalRadius) {
+        style['--op-overlay-modal-radius'] = modalRadius
+      }
+
+      if (drawerRadius) {
+        style['--op-overlay-radius'] = drawerRadius
+      }
+
+      return style
+    })
 
     /**
      * 处理键盘关闭交互。
@@ -83,7 +107,7 @@ export default defineComponent({
     return () => [
       slots.default?.(),
       h(Teleport, { to: 'body' }, [
-        h('div', { class: 'op-overlay-container' }, activeItems.value.map(item => [
+        h('div', { class: 'op-overlay-container', style: containerStyle.value }, activeItems.value.map(item => [
           h(Transition, { name: 'op-overlay-mask' }, {
             default: () => item.show
               ? h('div', {

@@ -33,6 +33,10 @@ export interface OverlayFooterContext {
 export interface OverlayProviderProps {
   /** 弹层基础 z-index，用于适配不同第三方组件库的弹层层级。 */
   zIndex?: number
+  /** modal 圆角，支持数字像素值或 CSS 长度。 */
+  modalRadius?: number | string
+  /** drawer 圆角，支持数字像素值或 CSS 长度。 */
+  drawerRadius?: number | string
   /** 内容区域滚动容器组件，例如 Naive UI 的 NScrollbar。 */
   contentWrapper?: Component
   /** 传给内容区域滚动容器组件的 props。 */
