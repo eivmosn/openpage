@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": "../../.cache/tsbuildinfo/overlay.tsbuildinfo",
+    "types": ["node"]
+  },
+  "include": [
+    "tsdown.config.ts",
+    "src/**/*.ts",
+    "src/**/*.vue",
+    "../../env.d.ts"
+  ]
+}
