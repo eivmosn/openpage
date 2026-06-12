@@ -1,1 +1,1 @@
-export type { OpenPageComponents, UiComponentProps } from '@openpage/core'
+export type { OpenPageComponents, UiComponentProps, UiFormWrapperProps } from '@openpage/core'

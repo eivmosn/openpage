@@ -23,27 +23,14 @@ async function handleUpdateValue(nextValue: string): Promise<void> {
 </script>
 
 <template>
-  <form
-    class="openpage-naive-password-form"
-    autocomplete="on"
-    @submit.prevent
-  >
-    <NInput
-      :disabled="field.disabled.value"
-      :placeholder="field.placeholder.value"
-      :type="field.type.value"
-      :value="field.value.value"
-      :input-props="{
-        autocomplete: 'username',
-      }"
-      @update:value="handleUpdateValue"
-    />
-  </form>
+  <NInput
+    :disabled="field.disabled.value"
+    :placeholder="field.placeholder.value"
+    :type="field.type.value"
+    :value="field.value.value"
+    :input-props="{
+      autocomplete: 'username',
+    }"
+    @update:value="handleUpdateValue"
+  />
 </template>
-
-<style scoped>
-.openpage-naive-password-form {
-  margin: 0;
-  width: 100%;
-}
-</style>

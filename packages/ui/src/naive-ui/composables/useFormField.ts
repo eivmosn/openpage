@@ -1,3 +1,4 @@
+import type { FormItemRule } from 'naive-ui'
 import type { ComputedRef } from 'vue'
 import type { UiComponentProps } from '../../types'
 import type { InputType } from '../utils/resolve'
@@ -9,6 +10,9 @@ export interface NaiveFormFieldBinding {
   label: ComputedRef<string | undefined>
   path: ComputedRef<string | undefined>
   rawValue: ComputedRef<unknown>
+  required: ComputedRef<boolean>
+  rule: ComputedRef<FormItemRule | FormItemRule[] | undefined>
+  labelWidth: ComputedRef<number | string | undefined>
   value: ComputedRef<string>
   type: ComputedRef<InputType>
   placeholder: ComputedRef<string>
@@ -31,6 +35,9 @@ export function useFormField(props: UiComponentProps, options: UseFormFieldOptio
   const label = computed(resolveLabel)
   const path = computed(resolvePath)
   const rawValue = computed(resolveRawValue)
+  const required = computed(resolveRequired)
+  const rule = computed(resolveRule)
+  const labelWidth = computed(resolveLabelWidth)
   const value = computed(resolveValue)
   const type = computed(resolveType)
   const placeholder = computed(resolvePlaceholder)
@@ -74,6 +81,53 @@ export function useFormField(props: UiComponentProps, options: UseFormFieldOptio
   }
 
   /**
+   * 解析字段是否必填。
+   *
+   * @returns 返回字段是否需要必填校验。
+   */
+  function resolveRequired(): boolean {
+    return props.component.required === true || props.component.props.required === true
+  }
+
+  /**
+   * 解析字段标签宽度。
+   *
+   * @returns 返回字段标签宽度配置。
+   */
+  function resolveLabelWidth(): number | string | undefined {
+    return props.component.labelWidth
+  }
+
+  /**
+   * 解析字段校验规则。
+   *
+   * @returns 返回 Naive UI 表单项校验规则。
+   */
+  function resolveRule(): FormItemRule | FormItemRule[] | undefined {
+    const rawRule = props.component.props.rule
+    const rules: FormItemRule[] = []
+
+    if (required.value) {
+      rules.push({
+        required: true,
+        message: String(props.component.props.message || `${label.value || '该字段'}不能为空`),
+        trigger: ['blur', 'change'],
+      })
+    }
+
+    if (rawRule && typeof rawRule === 'object') {
+      if (Array.isArray(rawRule)) {
+        rules.push(...rawRule.filter(isFormItemRule))
+      }
+      else if (isFormItemRule(rawRule)) {
+        rules.push(rawRule)
+      }
+    }
+
+    return rules.length ? rules : undefined
+  }
+
+  /**
    * 解析字段当前值。
    *
    * @returns 返回字段当前字符串值。
@@ -106,7 +160,7 @@ export function useFormField(props: UiComponentProps, options: UseFormFieldOptio
    * @returns 返回是否展示校验反馈。
    */
   function resolveShowFeedback(): boolean {
-    return props.component.props.showFeedback !== false
+    return false
   }
 
   return {
@@ -114,9 +168,22 @@ export function useFormField(props: UiComponentProps, options: UseFormFieldOptio
     label,
     path,
     rawValue,
+    required,
+    rule,
+    labelWidth,
     value,
     type,
     placeholder,
     showFeedback,
   }
+}
+
+/**
+ * 判断配置值是否可以作为 Naive UI 表单项规则。
+ *
+ * @param rule 需要判断的规则配置。
+ * @returns 返回是否为对象规则。
+ */
+function isFormItemRule(rule: unknown): rule is FormItemRule {
+  return Boolean(rule) && typeof rule === 'object'
 }
