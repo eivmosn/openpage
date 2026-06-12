@@ -21,6 +21,8 @@ export interface CompiledComponent {
   disabled?: unknown
   defaultValue?: unknown
   computedValue?: unknown
+  required?: unknown
+  labelWidth?: string | number | undefined
   props: Record<string, unknown>
   staticProps: Record<string, unknown>
   dynamicProps: readonly CompiledDynamicProp[]

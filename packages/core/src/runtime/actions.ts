@@ -15,7 +15,9 @@ export interface EventRuntimeHelpers extends ValueRuntimeHelpers, Record<string,
   getComponentByName: (name: string) => CompiledComponent | undefined
   getState: (path: string) => unknown
   message: NonNullable<RuntimeContext['services']['message']>
+  resetForm: () => Promise<boolean>
   setState: (path: string, value: unknown) => void
+  submitForm: () => Promise<boolean>
   updateComponentById: (id: string, patch: RuntimeComponentPatch) => boolean
   updateComponentByName: (name: string, patch: RuntimeComponentPatch) => boolean
 }
@@ -115,11 +117,31 @@ function createEventHelpers(context: RuntimeContext, payload?: unknown): EventRu
     getComponentByName: (name: string) => getComponentByName(context, name),
     getState: (path: string) => getByPath(context.state, path),
     message: context.services.message || {},
+    resetForm: async () => await runFormServiceAction(context, 'reset'),
     setState: (path: string, value: unknown) => {
       setByPath(context.state, path, value)
       context.services.notifyStateChange()
     },
+    submitForm: async () => await runFormServiceAction(context, 'submit'),
     updateComponentById: (id: string, patch: RuntimeComponentPatch) => updateComponentById(context, id, patch),
     updateComponentByName: (name: string, patch: RuntimeComponentPatch) => updateComponentByName(context, name, patch),
   }
+}
+
+/**
+ * 执行表单服务动作。
+ *
+ * @param context 当前渲染器运行时上下文。
+ * @param actionName 表单服务动作名称。
+ * @returns 返回动作是否执行通过。
+ */
+async function runFormServiceAction(context: RuntimeContext, actionName: keyof NonNullable<RuntimeContext['services']['form']>): Promise<boolean> {
+  const action = context.services.form?.[actionName]
+
+  if (!action) {
+    context.services.message?.warning?.('当前页面未配置表单校验能力')
+    return false
+  }
+
+  return await action()
 }

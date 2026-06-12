@@ -4,7 +4,7 @@ export interface CompileSchemaOptions {
   dynamicFieldKeys?: readonly string[]
 }
 
-export const defaultDynamicFieldKeys = ['label', 'visible', 'disabled', 'defaultValue'] as const satisfies readonly (keyof ComponentSchema)[]
+export const defaultDynamicFieldKeys = ['label', 'visible', 'disabled', 'defaultValue', 'required'] as const satisfies readonly (keyof ComponentSchema)[]
 
 /**
  * 解析 Schema 编译配置。

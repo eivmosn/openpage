@@ -14,6 +14,8 @@ export interface ComponentSchema {
   disabled?: unknown
   defaultValue?: unknown
   computedValue?: unknown
+  required?: unknown
+  labelWidth?: undefined | number | string
   props?: Record<string, unknown>
   children?: ComponentSchema[]
   events?: Record<string, EventSchema>

@@ -14,4 +14,5 @@ export type {
   RuntimeServices,
 } from './types/runtime'
 export type { ComponentSchema, EventSchema, PageSchema } from './types/schema'
-export type { OpenPageComponents, UiComponentProps } from './types/ui'
+export { formWrapperKey } from './types/ui'
+export type { OpenPageComponents, UiComponentProps, UiFormWrapperProps } from './types/ui'

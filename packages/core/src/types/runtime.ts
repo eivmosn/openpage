@@ -18,7 +18,13 @@ export interface RuntimeMessageService {
   info?: (content: string) => void
 }
 
+export interface RuntimeFormService {
+  reset: () => Promise<boolean> | boolean
+  submit: () => Promise<boolean> | boolean
+}
+
 export interface RuntimeServices {
+  form?: RuntimeFormService
   message?: RuntimeMessageService
   notifyStateChange: () => void
 }

@@ -94,6 +94,10 @@ function compileComponent(
     defaultValue: component.defaultValue,
     // 计算值表达式，由 useComputedValues 集中创建 watcher 并同步到 model.path。
     computedValue: component.computedValue,
+    // 表单必填配置，支持静态布尔值和动态表达式。
+    required: component.required,
+    // 标签宽度
+    labelWidth: component.labelWidth,
     // 原始 props，保留给 patch 合并和调试读取。
     props: compiledProps.props,
     // 不含模板表达式的 props，渲染时可直接复用，避免重复深解析。

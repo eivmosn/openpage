@@ -8,9 +8,11 @@ import { usePageInteractionStyles } from '../interactions/usePageInteractionStyl
 import { createPageContext, updatePageSchema, updatePageState } from '../runtime/vue/createPageContext'
 import { useComputedValues } from '../runtime/vue/useComputedValues'
 import { providePageContext } from '../runtime/vue/usePageContext'
+import { formWrapperKey } from '../types/ui'
 import { Component } from './Component'
 
 const missingComponentsMessage = 'OpenPage Renderer 渲染失败：未配置 UI 组件映射，请通过 components 属性传入组件表。'
+const missingFormWrapperMessage = '[openpage] 未配置 formWrapper，页面将无法使用组件库表单校验。OpenPage 当前依赖第三方 UI 组件库的 Form 能力进行验证，以避免重复实现校验逻辑；如需校验，请在 components 中提供 formWrapper。'
 
 const PageProvider = defineComponent({
   name: 'OpenPageProvider',
@@ -55,6 +57,7 @@ export const Page = defineComponent({
     const compiled = computed(() => markRaw(compileSchema(schema.value)))
     let cachedRootChildren: string[] | undefined
     let cachedRootChildrenVNodes: unknown
+    let hasWarnedMissingFormWrapper = false
 
     usePageInteractionStyles(compiled)
 
@@ -117,8 +120,40 @@ export const Page = defineComponent({
       }
 
       return h(PageProvider, { context: runtimeContext }, {
-        default: () => renderRootChildren(runtimeContext.compiled.children),
+        default: () => renderPageContent(runtimeContext),
       })
+    }
+
+    /**
+     * 渲染页面内容，并允许 UI 适配层挂载表单包装器。
+     *
+     * @param runtimeContext 当前页面运行时上下文。
+     * @returns 返回页面内容 VNode。
+     */
+    function renderPageContent(runtimeContext: PageContext): unknown {
+      const children = renderRootChildren(runtimeContext.compiled.children)
+      const formWrapper = runtimeContext.components[formWrapperKey]
+
+      if (!formWrapper) {
+        warnMissingFormWrapper()
+        return children
+      }
+
+      return h(formWrapper, { context: runtimeContext }, {
+        default: () => children,
+      })
+    }
+
+    /**
+     * 提示调用方补齐表单包装器，否则无法复用第三方组件库校验能力。
+     */
+    function warnMissingFormWrapper(): void {
+      if (hasWarnedMissingFormWrapper) {
+        return
+      }
+
+      hasWarnedMissingFormWrapper = true
+      console.warn(missingFormWrapperMessage)
     }
 
     /**
