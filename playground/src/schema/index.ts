@@ -10,129 +10,164 @@ export const testSchema: PageSchema = {
     {
       id: 'page-layout',
       type: 'div',
+      props: {
+        style: {
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100%',
+          minHeight: 0,
+          overflow: 'hidden',
+        },
+      },
       children: [
         {
-          id: 'form-shell',
+          id: 'page-header',
           type: 'div',
           props: {
             style: {
+              alignItems: 'center',
+              background: '#fff',
+              borderBottom: '1px solid #e5e7eb',
               boxSizing: 'border-box',
-              margin: '0 auto',
-              width: '100%',
+              display: 'flex',
+              flex: '0 0 auto',
+              justifyContent: 'flex-start',
+              minHeight: '56px',
+              padding: '10px 16px',
             },
           },
           children: [
             {
-              id: 'form',
+              id: 'save-draft',
+              type: 'button',
+              label: '保存',
+              props: {
+                popconfirm: {
+                  positiveText: '确认',
+                  negativeText: '取消',
+                  text: '文字内容',
+                  showIcon: true,
+                  customIcon: '',
+                  trigger: 'click',
+                },
+                tooltip: {
+                  text: '我是悬浮提示内容',
+                  trigger: 'click',
+                  maxWidth: 300,
+                },
+                type: 'default',
+              },
+              events: {
+                onclick: `
+                  console.log('保存数据：', { username, phone, email, channels, tags })
+                  message.info('已保存当前填写内容')
+                `,
+              },
+            },
+          ],
+        },
+        {
+          id: 'page-content',
+          type: 'div',
+          props: {
+            scrollbar: true,
+            style: {
+              flex: '1 1 auto',
+              minHeight: 0,
+              overflow: 'hidden',
+            },
+          },
+          children: [
+            {
+              id: 'form-shell',
               type: 'div',
+              props: {
+                style: {
+                  padding: '20px',
+                },
+              },
               children: [
-                basicSection,
-                preferenceSection,
-                advancedSection,
                 {
-                  id: 'form-actions',
+                  id: 'form',
                   type: 'div',
-                  props: {
-                    style: {
-                      alignItems: 'center',
-                      display: 'flex',
-                      gap: '14px',
-                      justifyContent: 'center',
-                      margin: '10px 15px',
-                    },
-                  },
                   children: [
-                    {
-                      id: 'save-draft',
-                      type: 'button',
-                      label: '暂存',
-                      props: {
-                        popconfirm: {
-                          positiveText: '确认',
-                          negativeText: '取消',
-                          text: '文字内容',
-                          showIcon: true,
-                          customIcon: '',
-                          trigger: 'click',
-                        },
-                        tooltip: {
-                          text: '我是悬浮提示内容',
-                          trigger: 'click',
-                          maxWidth: 300,
-                        },
-                        type: 'default',
-                      },
-                      events: {
-                        onclick: `
-                          console.log('暂存数据：', { username, phone, email, channels, tags })
-                          msg.info('已暂存当前填写内容')
-                        `,
-                      },
-                    },
-                    {
-                      id: 'reset-form',
-                      type: 'button',
-                      label: '重置',
-                      props: {
-                        tooltip: {
-                          text: '清空当前页面状态',
-                          maxWidth: 240,
-                        },
-                        type: 'warning',
-                      },
-                      events: {
-                        onclick: `
-                          await resetForm()
-                          username = ''
-                          phone = ''
-                          email = ''
-                          birthday = ''
-                          loginAt = ''
-                          time = null
-                          description = ''
-                          channels = []
-                          tags = []
-                          agreement = false
-                          admin = false
-                          message.warning('表单已重置')
-                        `,
-                      },
-                    },
-                    {
-                      id: 'submit-form',
-                      type: 'button',
-                      label: '提交',
-                      props: {
-                        type: 'primary',
-                      },
-                      events: {
-                        onclick: `
-                          const valid = await submitForm()
-                          if (!valid) {
-                            return
-                          }
-                          console.log('提交数据：', { username, phone, email, channels, tags })
-                          message.success('提交成功')
-                        `,
-                      },
-                    },
+                    basicSection,
+                    preferenceSection,
+                    advancedSection,
                   ],
                 },
               ],
             },
           ],
         },
+        {
+          id: 'page-footer',
+          type: 'div',
+          props: {
+            style: {
+              alignItems: 'center',
+              background: '#fff',
+              borderTop: '1px solid #e5e7eb',
+              boxSizing: 'border-box',
+              display: 'flex',
+              flex: '0 0 auto',
+              gap: '14px',
+              justifyContent: 'center',
+              minHeight: '64px',
+              padding: '12px 16px',
+            },
+          },
+          children: [
+            {
+              id: 'reset-form',
+              type: 'button',
+              label: '重置',
+              props: {
+                tooltip: {
+                  text: '清空当前页面状态',
+                  maxWidth: 240,
+                },
+                type: 'warning',
+              },
+              events: {
+                onclick: `
+                  await resetForm()
+                  username = ''
+                  phone = ''
+                  email = ''
+                  birthday = ''
+                  loginAt = ''
+                  time = null
+                  description = ''
+                  channels = []
+                  tags = []
+                  agreement = false
+                  admin = false
+                  message.warning('表单已重置')
+                `,
+              },
+            },
+            {
+              id: 'submit-form',
+              type: 'button',
+              label: '提交',
+              props: {
+                type: 'primary',
+              },
+              events: {
+                onclick: `
+                  const valid = await submitForm()
+                  if (!valid) {
+                    return
+                  }
+                  console.log('提交数据：', { username, phone, email, channels, tags })
+                  message.success('提交成功')
+                `,
+              },
+            },
+          ],
+        },
       ],
-    },
-    {
-      id: 'tenant1',
-      type: 'autoComplete',
-      name: 'tenant1',
-      label: '租户2',
-      props: {
-        options: ['OpenPage Cloud', 'OpenPage Studio', 'OpenPage Enterprise'],
-        placeholder: '请输入或选择租户',
-      },
     },
   ],
 }

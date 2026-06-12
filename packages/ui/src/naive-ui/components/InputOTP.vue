@@ -3,6 +3,7 @@ import type { UiComponentProps } from '../../types'
 import { NInputOtp } from 'naive-ui'
 import { computed } from 'vue'
 import { useFormField } from '../composables/useFormField'
+import { omitProps } from '../utils/omitProps'
 
 defineOptions({
   name: 'OpenPageNaiveInputOtp',
@@ -33,9 +34,7 @@ async function handleUpdateValue(nextValue: string[]): Promise<void> {
  * @returns 返回已移除 OpenPage 自定义配置后的 props。
  */
 function resolveInputOtpProps(): Record<string, unknown> {
-  const { valueType: _valueType, ...inputProps } = props.component.props
-
-  return inputProps
+  return omitProps(props.component.props, ['valueType'])
 }
 
 /**

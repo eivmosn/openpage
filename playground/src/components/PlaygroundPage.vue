@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { OpenPageComponents } from '@openpage/core'
 import { Page } from '@openpage/core'
-import { NButton, NScrollbar, NTooltip, useMessage } from 'naive-ui'
+import { NButton, NTooltip, useMessage } from 'naive-ui'
 import { computed, onBeforeUnmount, shallowRef, useTemplateRef } from 'vue'
 import { useResizablePanels } from '../composables/useResizablePanels'
 import { useSchemaEditor } from '../composables/useSchemaEditor'
@@ -107,17 +107,13 @@ onBeforeUnmount(() => {
     />
 
     <section class="playground__panel playground__preview-panel">
-      <NScrollbar class="playground__preview-scrollbar">
-        <div class="openpage-shell">
-          <Page
-            :components="components"
-            :schema="schema"
-            :state="state"
-            :platform="platform"
-            @update:state="syncStateSource"
-          />
-        </div>
-      </NScrollbar>
+      <Page
+        :components="components"
+        :schema="schema"
+        :state="state"
+        :platform="platform"
+        @update:state="syncStateSource"
+      />
     </section>
 
     <div
@@ -184,6 +180,12 @@ onBeforeUnmount(() => {
   min-height: 0;
   min-width: 0;
   overflow: hidden;
+    background:
+    linear-gradient(#f4f4f5 1px, transparent 1px),
+    linear-gradient(90deg, #f4f4f5 1px, transparent 1px),
+    #fafafa;
+  background-size: 32px 32px;
+  box-sizing: border-box;
 }
 
 .playground__editor-panel:first-of-type {
@@ -201,10 +203,6 @@ onBeforeUnmount(() => {
 .playground__editor-panel :deep(.monaco-editor-host) {
   flex: 1;
   height: auto;
-}
-
-.playground__preview-panel {
-  background: #fafafa;
 }
 
 .playground__panel-header {
@@ -243,12 +241,6 @@ onBeforeUnmount(() => {
 }
 
 .openpage-shell {
-  background:
-    linear-gradient(#f4f4f5 1px, transparent 1px),
-    linear-gradient(90deg, #f4f4f5 1px, transparent 1px),
-    #fafafa;
-  background-size: 32px 32px;
-  box-sizing: border-box;
   max-width: 100%;
   min-height: 100%;
   min-width: 0;

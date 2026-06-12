@@ -128,6 +128,7 @@ function resolveValidationMessage(error: unknown): string | undefined {
 <template>
   <NForm
     ref="form"
+    class="openpage-naive-form"
     :model="formModel"
     label-placement="left"
     label-width="88"
@@ -137,3 +138,13 @@ function resolveValidationMessage(error: unknown): string | undefined {
     <slot />
   </NForm>
 </template>
+
+<style scoped>
+.openpage-naive-form {
+  box-sizing: border-box;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  width: 100%;
+}
+</style>
