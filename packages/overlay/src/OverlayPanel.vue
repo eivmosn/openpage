@@ -4,22 +4,29 @@ import { computed, useTemplateRef } from 'vue'
 import OverlayBody from './OverlayBody.vue'
 import OverlayFooter from './OverlayFooter.vue'
 import OverlayHeader from './OverlayHeader.vue'
+import { resolveDrawerPosition, resolveModalPlacement } from './overlayPosition'
 import { overlay } from './useOverlay'
 import { useOverlayGeometry } from './useOverlayGeometry'
 
 const props = defineProps<{
   contentWrapper?: OverlayProviderProps['contentWrapper']
   contentWrapperProps?: OverlayProviderProps['contentWrapperProps']
+  drawer?: OverlayProviderProps['drawer']
   item: OverlayItem
+  modal?: OverlayProviderProps['modal']
 }>()
 
 const panelRef = useTemplateRef<HTMLElement>('panel')
-const geometry = useOverlayGeometry(panelRef, props.item)
+const geometry = useOverlayGeometry(panelRef, props.item, props)
+const drawerPosition = computed(() => resolveDrawerPosition(props.item, props))
+const modalPlacement = computed(() => resolveModalPlacement(props.item, props))
 
 const panelClass = computed(() => [
   'op-overlay-panel',
   `op-overlay-panel--${props.item.options.type}`,
-  `op-overlay-panel--${props.item.options.placement}`,
+  props.item.options.type === 'drawer'
+    ? `op-overlay-panel--${drawerPosition.value}`
+    : modalPlacement.value.className,
   {
     'is-animating': geometry.animating.value,
     'is-body-full-height': props.item.options.bodyFullHeight,
@@ -45,15 +52,15 @@ const visibleResizeHandles = computed(() => {
     return geometry.resizeHandles
   }
 
-  if (props.item.options.placement === 'right') {
+  if (drawerPosition.value === 'right') {
     return geometry.resizeHandles.filter(handle => handle.direction === 'w')
   }
 
-  if (props.item.options.placement === 'left') {
+  if (drawerPosition.value === 'left') {
     return geometry.resizeHandles.filter(handle => handle.direction === 'e')
   }
 
-  if (props.item.options.placement === 'top') {
+  if (drawerPosition.value === 'top') {
     return geometry.resizeHandles.filter(handle => handle.direction === 's')
   }
 

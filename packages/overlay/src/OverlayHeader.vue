@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import CloseIcon from './CloseIcon.vue'
-import MinimizeIcon from './MinimizeIcon.vue'
-import MoveDiagonalIcon from './MoveDiagonalIcon.vue'
+import FullscreenIcon from './FullscreenIcon.vue'
+import OffscreenIcon from './OffscreenIcon.vue'
 
 const props = withDefaults(defineProps<{
   title?: string
@@ -61,8 +61,8 @@ function handleDoubleClick(event: MouseEvent): void {
         aria-label="切换全屏"
         @click.stop="emit('toggleFullscreen')"
       >
-        <MinimizeIcon v-if="isFullscreen" />
-        <MoveDiagonalIcon v-else />
+        <OffscreenIcon v-if="isFullscreen" />
+        <FullscreenIcon v-else />
       </button>
       <button
         v-if="closable"

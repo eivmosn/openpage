@@ -2,7 +2,27 @@ import type { Component, VNodeChild } from 'vue'
 
 export type OverlayType = 'modal' | 'drawer'
 export type OverlayAction = 'confirm' | 'cancel' | 'close'
-export type OverlayPlacement = 'right' | 'left' | 'top' | 'bottom'
+export type OverlayDrawerPosition = 'right' | 'left' | 'top' | 'bottom'
+export type OverlayModalPosition = 'center' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'left' | 'right' | 'bottom'
+export type OverlayOffset = readonly [top?: number | null, right?: number | null, bottom?: number | null, left?: number | null]
+
+/** OverlayProvider 的 modal 全局配置。 */
+export interface OverlayProviderModalOptions {
+  /** modal 圆角，支持数字像素值或 CSS 长度。 */
+  radius?: number | string
+  /** modal 默认初始位置。 */
+  position?: OverlayModalPosition
+  /** modal 默认偏移量，遵循上右下左。 */
+  offset?: OverlayOffset
+}
+
+/** OverlayProvider 的 drawer 全局配置。 */
+export interface OverlayProviderDrawerOptions {
+  /** drawer 圆角，支持数字像素值或 CSS 长度。 */
+  radius?: number | string
+  /** drawer 默认初始位置。 */
+  position?: OverlayDrawerPosition
+}
 
 /** overlay 关闭后返回给调用方的结果。 */
 export interface OverlayResult<T = unknown> {
@@ -33,10 +53,10 @@ export interface OverlayFooterContext {
 export interface OverlayProviderProps {
   /** 弹层基础 z-index，用于适配不同第三方组件库的弹层层级。 */
   zIndex?: number
-  /** modal 圆角，支持数字像素值或 CSS 长度。 */
-  modalRadius?: number | string
-  /** drawer 圆角，支持数字像素值或 CSS 长度。 */
-  drawerRadius?: number | string
+  /** modal 全局配置。 */
+  modal?: OverlayProviderModalOptions
+  /** drawer 全局配置。 */
+  drawer?: OverlayProviderDrawerOptions
   /** 内容区域滚动容器组件，例如 Naive UI 的 NScrollbar。 */
   contentWrapper?: Component
   /** 传给内容区域滚动容器组件的 props。 */
@@ -47,14 +67,18 @@ export interface OverlayProviderProps {
 export interface OverlayOptions {
   /** 弹层类型：modal 为居中弹窗，drawer 为抽屉。 */
   type?: OverlayType
-  /** drawer 弹出方向。 */
-  placement?: OverlayPlacement
+  /** 弹层初始位置，modal 和 drawer 会按各自支持的位置解析。 */
+  position?: OverlayModalPosition | OverlayDrawerPosition
   /** 弹层标题。 */
   title?: string
   /** 弹层宽度，支持数字像素值或 CSS 长度。 */
   width?: number | string
   /** modal 高度或上下 drawer 高度。 */
   height?: number | string
+  /** 弹层圆角，优先级高于 OverlayProvider 对应类型配置。 */
+  radius?: number | string
+  /** modal 初始偏移量，遵循上右下左，优先级高于 OverlayProvider 全局配置。 */
+  offset?: OverlayOffset
   /** 最小宽度。 */
   minWidth?: number
   /** 最小高度。 */
@@ -107,7 +131,7 @@ export interface OverlayContext<T = unknown> {
   setConfirmHandler: (handler?: OverlayConfirmHandler<T>) => void
 }
 
-export type OverlayResolvedOptions = Required<Omit<OverlayOptions, 'footer'>> & Pick<OverlayOptions, 'footer'>
+export type OverlayResolvedOptions = Required<Omit<OverlayOptions, 'footer' | 'offset' | 'position' | 'radius'>> & Pick<OverlayOptions, 'footer' | 'offset' | 'position' | 'radius'>
 
 /** 内部维护的弹层实例数据。 */
 export interface OverlayItem {

@@ -1,6 +1,8 @@
 import type { CSSProperties, Ref } from 'vue'
-import type { OverlayItem, OverlayPlacement } from './types'
+import type { OverlayPositionOptions } from './overlayPosition'
+import type { OverlayDrawerPosition, OverlayItem } from './types'
 import { computed, onBeforeUnmount, shallowRef } from 'vue'
+import { isHorizontalDrawer, resolveDrawerPosition, resolveModalPlacement } from './overlayPosition'
 import { clamp, formatCssUnit, isInteractiveTarget } from './utils'
 
 type ResizeDirection = 'n' | 'e' | 's' | 'w' | 'ne' | 'nw' | 'se' | 'sw'
@@ -21,6 +23,11 @@ interface ResizeState extends PanelRect {
 interface DragState extends PanelRect {
   startX: number
   startY: number
+}
+
+interface DragOffset {
+  x: number
+  y: number
 }
 
 /** 弹层几何状态控制器。 */
@@ -53,13 +60,16 @@ const resizeHandles: OverlayGeometry['resizeHandles'] = [
  *
  * @param panelRef 弹层 DOM 引用。
  * @param item 当前弹层实例。
+ * @param options 弹层全局几何配置。
  * @returns 返回弹层几何状态控制器。
  */
-export function useOverlayGeometry(panelRef: Ref<HTMLElement | null>, item: OverlayItem): OverlayGeometry {
+export function useOverlayGeometry(panelRef: Ref<HTMLElement | null>, item: OverlayItem, options: OverlayPositionOptions = {}): OverlayGeometry {
   const widthPx = shallowRef<number>()
   const heightPx = shallowRef<number>()
   const leftPx = shallowRef<number>()
   const topPx = shallowRef<number>()
+  const translateX = shallowRef(0)
+  const translateY = shallowRef(0)
   const resizing = shallowRef(false)
   const dragging = shallowRef(false)
   const animating = shallowRef(false)
@@ -67,8 +77,10 @@ export function useOverlayGeometry(panelRef: Ref<HTMLElement | null>, item: Over
   let resizeState: ResizeState | undefined
   let dragState: DragState | undefined
   let restoreRect: PanelRect | undefined
+  let pendingDragOffset: DragOffset | undefined
   let animationFrameId = 0
   let animationTimer = 0
+  let interactionFrameId = 0
 
   const placed = computed(() => leftPx.value !== undefined && topPx.value !== undefined)
 
@@ -78,10 +90,12 @@ export function useOverlayGeometry(panelRef: Ref<HTMLElement | null>, item: Over
     }
 
     if (item.options.type === 'drawer') {
-      applyDrawerSize(style, item.options.placement, widthPx.value, heightPx.value, item)
+      applyOverlayRadius(style, item, '--op-overlay-radius')
+      applyDrawerSize(style, resolveDrawerPosition(item, options), widthPx.value, heightPx.value, item)
       return style
     }
 
+    applyOverlayRadius(style, item, '--op-overlay-modal-radius')
     style.width = widthPx.value === undefined ? formatCssUnit(item.options.width) : `${widthPx.value}px`
     style.minWidth = `${item.options.minWidth}px`
     style.minHeight = `${item.options.minHeight}px`
@@ -90,11 +104,21 @@ export function useOverlayGeometry(panelRef: Ref<HTMLElement | null>, item: Over
       style.height = heightPx.value === undefined ? formatCssUnit(item.options.height) : `${heightPx.value}px`
     }
 
+    if (!placed.value) {
+      Object.assign(style, resolveModalPlacement(item, options).style)
+    }
+
     if (placed.value) {
       style.left = `${leftPx.value}px`
       style.margin = '0'
+      style.maxHeight = 'none'
+      style.maxWidth = 'none'
       style.position = 'fixed'
       style.top = `${topPx.value}px`
+
+      if (dragging.value) {
+        style.transform = `translate3d(${translateX.value}px, ${translateY.value}px, 0)`
+      }
     }
 
     return style
@@ -187,12 +211,15 @@ export function useOverlayGeometry(panelRef: Ref<HTMLElement | null>, item: Over
       return
     }
 
-    leftPx.value = clamp(dragState.left + event.clientX - dragState.startX, 0, window.innerWidth - dragState.width)
-    topPx.value = clamp(dragState.top + event.clientY - dragState.startY, 0, window.innerHeight - dragState.height)
+    const offset = getDragOffset(dragState, event)
+
+    scheduleDragOffset(offset)
   }
 
   /** 停止拖拽并释放事件。 */
   function stopDrag(): void {
+    flushInteractionFrame()
+    commitDragOffset()
     dragging.value = false
     dragState = undefined
     window.removeEventListener('mousemove', handleDragMove)
@@ -251,6 +278,67 @@ export function useOverlayGeometry(panelRef: Ref<HTMLElement | null>, item: Over
     heightPx.value = rect.height
     leftPx.value = rect.left
     topPx.value = rect.top
+    resetDragOffset()
+  }
+
+  /** 将当前拖拽 transform 偏移提交为布局坐标。 */
+  function commitDragOffset(): void {
+    if (leftPx.value !== undefined) {
+      leftPx.value += translateX.value
+    }
+
+    if (topPx.value !== undefined) {
+      topPx.value += translateY.value
+    }
+
+    resetDragOffset()
+  }
+
+  /** 重置拖拽 transform 偏移量。 */
+  function resetDragOffset(): void {
+    translateX.value = 0
+    translateY.value = 0
+  }
+
+  /**
+   * 将拖拽偏移安排到下一帧提交。
+   *
+   * @param offset 最新拖拽偏移。
+   */
+  function scheduleDragOffset(offset: DragOffset): void {
+    pendingDragOffset = offset
+    requestInteractionFrame()
+  }
+
+  /** 请求下一帧提交交互状态。 */
+  function requestInteractionFrame(): void {
+    if (interactionFrameId) {
+      return
+    }
+
+    interactionFrameId = window.requestAnimationFrame(() => {
+      interactionFrameId = 0
+      flushPendingInteraction()
+    })
+  }
+
+  /** 立即提交待处理的交互状态。 */
+  function flushInteractionFrame(): void {
+    if (interactionFrameId) {
+      window.cancelAnimationFrame(interactionFrameId)
+      interactionFrameId = 0
+    }
+
+    flushPendingInteraction()
+  }
+
+  /** 提交 resize 或拖拽的最新待处理状态。 */
+  function flushPendingInteraction(): void {
+    if (pendingDragOffset) {
+      translateX.value = pendingDragOffset.x
+      translateY.value = pendingDragOffset.y
+      pendingDragOffset = undefined
+    }
   }
 
   /** 清理全屏切换动画的帧任务和定时器。 */
@@ -265,6 +353,7 @@ export function useOverlayGeometry(panelRef: Ref<HTMLElement | null>, item: Over
       animationTimer = 0
     }
 
+    flushInteractionFrame()
     animating.value = false
   }
 
@@ -311,6 +400,7 @@ export function useOverlayGeometry(panelRef: Ref<HTMLElement | null>, item: Over
   }
 
   onBeforeUnmount(() => {
+    flushInteractionFrame()
     clearFullscreenAnimation()
     stopResize()
     stopDrag()
@@ -331,16 +421,31 @@ export function useOverlayGeometry(panelRef: Ref<HTMLElement | null>, item: Over
 }
 
 /**
+ * 将单个弹层圆角配置写入样式变量。
+ *
+ * @param style 待写入的样式对象。
+ * @param item 当前弹层实例。
+ * @param property 圆角 CSS 变量名。
+ */
+function applyOverlayRadius(style: CSSProperties, item: OverlayItem, property: '--op-overlay-radius' | '--op-overlay-modal-radius'): void {
+  const radius = formatCssUnit(item.options.radius)
+
+  if (radius) {
+    style[property] = radius
+  }
+}
+
+/**
  * 将 drawer 尺寸写入样式对象。
  *
  * @param style 待写入的样式对象。
- * @param placement drawer 弹出方向。
+ * @param position drawer 弹出方向。
  * @param widthPx 当前宽度像素。
  * @param heightPx 当前高度像素。
  * @param item 当前弹层实例。
  */
-function applyDrawerSize(style: CSSProperties, placement: OverlayPlacement, widthPx: number | undefined, heightPx: number | undefined, item: OverlayItem): void {
-  if (placement === 'top' || placement === 'bottom') {
+function applyDrawerSize(style: CSSProperties, position: OverlayDrawerPosition, widthPx: number | undefined, heightPx: number | undefined, item: OverlayItem): void {
+  if (!isHorizontalDrawer(position)) {
     style.height = heightPx === undefined ? formatCssUnit(item.options.height || 251) : `${heightPx}px`
     return
   }
@@ -353,6 +458,8 @@ function applyDrawerSize(style: CSSProperties, placement: OverlayPlacement, widt
  *
  * @param state resize 初始状态。
  * @param event 指针移动事件。
+ * @param minWidth 最小宽度。
+ * @param minHeight 最小高度。
  * @returns 返回 resize 后的矩形。
  */
 function getResizedRect(state: ResizeState, event: PointerEvent, minWidth: number, minHeight: number): PanelRect {
@@ -382,4 +489,21 @@ function getResizedRect(state: ResizeState, event: PointerEvent, minWidth: numbe
   }
 
   return { width, height, left, top }
+}
+
+/**
+ * 根据拖拽状态计算 transform 偏移量。
+ *
+ * @param state 拖拽初始状态。
+ * @param event 鼠标移动事件。
+ * @returns 返回用于 translate3d 的偏移量。
+ */
+function getDragOffset(state: DragState, event: MouseEvent): DragOffset {
+  const nextLeft = clamp(state.left + event.clientX - state.startX, 0, window.innerWidth - state.width)
+  const nextTop = clamp(state.top + event.clientY - state.startY, 0, window.innerHeight - state.height)
+
+  return {
+    x: nextLeft - state.left,
+    y: nextTop - state.top,
+  }
 }

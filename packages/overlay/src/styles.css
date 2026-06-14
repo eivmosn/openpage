@@ -9,9 +9,9 @@
   --op-overlay-shadow: 0 6px 16px -9px rgba(0, 0, 0, 0.08), 0 9px 28px 0 rgba(0, 0, 0, 0.05), 0 12px 48px 16px rgba(0, 0, 0, 0.03);
   --op-overlay-radius: 3px;
   --op-overlay-modal-radius: 12px;
-  --op-overlay-header-padding: 16px 24px;
-  --op-overlay-body-padding: 20px 24px;
-  --op-overlay-footer-padding: 16px 24px;
+  --op-overlay-header-padding: 14px;
+  --op-overlay-body-padding: 20px;
+  --op-overlay-footer-padding: 14px;
   --op-overlay-font-family: v-sans, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --op-overlay-font-size: 14px;
   --op-overlay-line-height: 1.6;
@@ -50,7 +50,7 @@
   max-height: calc(100vh - 48px);
   max-width: calc(100vw - 48px);
   top: 50%;
-  transform: translate(-50%, -50%);
+  transform: var(--op-overlay-modal-transform, translate(-50%, -50%));
 }
 
 .op-overlay-panel--modal.is-placed {
@@ -113,6 +113,10 @@
 .op-overlay-panel.is-resizing {
   transition: none;
   user-select: none;
+}
+
+.op-overlay-panel.is-dragging {
+  will-change: transform;
 }
 
 .op-overlay-panel__header {
@@ -394,7 +398,7 @@
 .op-overlay-modal-enter-from,
 .op-overlay-modal-leave-to {
   opacity: 0;
-  transform: translate(-50%, -50%) scale(0.5);
+  transform: var(--op-overlay-modal-enter-transform, translate(-50%, -50%) scale(0.5));
 }
 
 .op-overlay-modal-leave-to.op-overlay-panel--modal.is-placed {
@@ -404,7 +408,7 @@
 .op-overlay-modal-enter-to,
 .op-overlay-modal-leave-from {
   opacity: 1;
-  transform: translate(-50%, -50%) scale(1);
+  transform: var(--op-overlay-modal-active-transform, translate(-50%, -50%) scale(1));
 }
 
 .op-overlay-modal-leave-from.op-overlay-panel--modal.is-placed {
