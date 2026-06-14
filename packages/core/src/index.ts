@@ -23,6 +23,7 @@ export type {
   RuntimeParentPageContext,
   RuntimeResolvedPage,
   RuntimeServices,
+  RuntimeValidateOptions,
   RuntimeValidateTarget,
 } from './types/runtime'
 export type { ComponentSchema, EventSchema, PageSchema } from './types/schema'

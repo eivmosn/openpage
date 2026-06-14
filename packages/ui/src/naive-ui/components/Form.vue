@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import type { CompiledComponent, RuntimeValidateTarget } from '@openpage/core'
-import type { FormInst, FormItemRule, FormValidationError } from 'naive-ui'
+import type { CompiledComponent, RuntimeValidateOptions, RuntimeValidateTarget } from '@openpage/core'
+import type { FormInst, FormItemInst, FormItemRule, FormValidationError } from 'naive-ui'
 import type { UiFormProps } from '../../types'
 import { getModelKey, getModelValue } from '@openpage/core'
 import { NForm } from 'naive-ui'
-import { computed, onBeforeUnmount, useTemplateRef } from 'vue'
+import { computed, onBeforeUnmount, provide, useTemplateRef } from 'vue'
+import { naiveFormItemRegistryKey } from '../utils/formItemRegistry'
 
 defineOptions({
   name: 'OpenPageNaiveForm',
@@ -14,10 +15,14 @@ defineOptions({
 const props = defineProps<UiFormProps>()
 const formRef = useTemplateRef<FormInst>('form')
 const formModel = computed(resolveFormModel)
+const formItems = new Map<string, Set<FormItemInst>>()
 
 registerFormService(props.context, {
   reset,
   validate,
+})
+provide(naiveFormItemRegistryKey, {
+  register: registerFormItem,
 })
 
 onBeforeUnmount(() => {
@@ -56,11 +61,12 @@ function unregisterFormService(
  * 校验当前表单。
  *
  * @param target 需要校验的组件标识或标识数组，不传时校验整个表单。
+ * @param options 当前校验配置。
  * @returns 返回表单是否校验通过。
  */
-async function validate(target?: RuntimeValidateTarget): Promise<boolean> {
+async function validate(target?: RuntimeValidateTarget, options?: RuntimeValidateOptions): Promise<boolean> {
   try {
-    const paths = resolveValidatePaths(target)
+    const paths = resolveValidatePaths(target, options)
 
     await formRef.value?.validate(undefined, paths
       ? rule => shouldValidateRule(rule, paths)
@@ -83,52 +89,72 @@ async function validate(target?: RuntimeValidateTarget): Promise<boolean> {
  * 判断当前规则是否属于本次目标校验范围。
  *
  * @param rule 当前 Naive UI 表单项规则。
- * @param paths 本次需要校验的字段路径集合。
+ * @param paths 本次字段校验配置。
  * @returns 返回当前规则是否需要执行。
  */
-function shouldValidateRule(rule: FormItemRule, paths: Set<string>): boolean {
-  return typeof rule.key === 'string' && paths.has(rule.key)
+function shouldValidateRule(rule: FormItemRule, paths: ValidatePathSet): boolean {
+  if (typeof rule.key !== 'string') {
+    return false
+  }
+
+  if (paths.ignored.has(rule.key)) {
+    return false
+  }
+
+  return paths.included ? paths.included.has(rule.key) : true
 }
 
 /**
  * 解析本次校验需要覆盖的字段路径集合。
  *
  * @param target 组件标识、组件标识数组或空值。
- * @returns 不传目标时返回空值；传入目标时返回字段路径集合。
+ * @param options 当前校验配置。
+ * @returns 不传目标且没有忽略项时返回空值；否则返回字段路径集合。
  */
-function resolveValidatePaths(target?: RuntimeValidateTarget): Set<string> | undefined {
-  if (target === undefined) {
+function resolveValidatePaths(target?: RuntimeValidateTarget, options?: RuntimeValidateOptions): ValidatePathSet | undefined {
+  if (target === undefined && !options?.ignore?.length) {
     return undefined
   }
 
-  const paths = new Set<string>()
+  const included = target === undefined ? undefined : new Set<string>()
+  const ignored = new Set<string>()
   const targets = Array.isArray(target) ? target : [target]
 
   for (const item of targets) {
-    const path = resolveValidatePath(item)
-
-    if (path) {
-      paths.add(path)
+    if (item !== undefined) {
+      resolveValidatePathsByTarget(item, included)
     }
   }
 
-  return paths
+  for (const item of options?.ignore || []) {
+    resolveValidatePathsByTarget(item, ignored)
+  }
+
+  return {
+    ignored,
+    included,
+  }
 }
 
 /**
- * 将组件标识解析为表单字段路径。
+ * 将组件标识解析为表单字段路径集合。
  *
  * @param target 组件 id、组件 name 或直接字段路径。
- * @returns 返回可交给 Naive UI 表单项识别的字段路径。
+ * @param paths 需要写入的字段路径集合。
  */
-function resolveValidatePath(target: string): string {
-  const component = resolveValidateComponent(target)
-
-  if (component?.model) {
-    return getModelKey(component.model)
+function resolveValidatePathsByTarget(target: string, paths: Set<string> | undefined): void {
+  if (!paths) {
+    return
   }
 
-  return target
+  const component = resolveValidateComponent(target)
+
+  if (!component) {
+    paths.add(target)
+    return
+  }
+
+  collectValidatePaths(component, paths)
 }
 
 /**
@@ -152,13 +178,97 @@ function resolveValidateComponent(target: string): CompiledComponent | undefined
 }
 
 /**
+ * 递归收集组件及其子组件的表单字段路径。
+ *
+ * @param component 当前组件。
+ * @param paths 需要写入的字段路径集合。
+ */
+function collectValidatePaths(component: CompiledComponent, paths: Set<string>): void {
+  if (component.model) {
+    paths.add(getModelKey(component.model))
+  }
+
+  for (const childId of component.children) {
+    const child = props.context.compiled.components.get(childId)
+
+    if (child) {
+      collectValidatePaths(child, paths)
+    }
+  }
+}
+
+interface ValidatePathSet {
+  ignored: Set<string>
+  included?: Set<string>
+}
+
+/**
  * 清除当前表单校验状态。
  *
+ * @param target 需要重置的组件标识或标识数组，不传时重置整个表单。
+ * @param options 当前重置配置。
  * @returns 返回重置是否完成。
  */
-function reset(): boolean {
-  formRef.value?.restoreValidation()
+function reset(target?: RuntimeValidateTarget, options?: RuntimeValidateOptions): boolean {
+  const paths = resolveValidatePaths(target, options)
+
+  if (!paths) {
+    formRef.value?.restoreValidation()
+    return true
+  }
+
+  for (const [path, items] of formItems) {
+    if (!shouldHandlePath(path, paths)) {
+      continue
+    }
+
+    for (const item of items) {
+      item.restoreValidation()
+    }
+  }
+
   return true
+}
+
+/**
+ * 判断当前字段路径是否属于本次操作范围。
+ *
+ * @param path 当前表单字段路径。
+ * @param paths 本次字段操作配置。
+ * @returns 返回当前字段是否需要处理。
+ */
+function shouldHandlePath(path: string, paths: ValidatePathSet): boolean {
+  if (paths.ignored.has(path)) {
+    return false
+  }
+
+  return paths.included ? paths.included.has(path) : true
+}
+
+/**
+ * 注册 Naive UI 表单项实例。
+ *
+ * @param path 当前表单项字段路径。
+ * @param item 当前 Naive UI 表单项实例。
+ * @returns 返回当前表单项的注销函数。
+ */
+function registerFormItem(path: string, item: FormItemInst): () => void {
+  let items = formItems.get(path)
+
+  if (!items) {
+    items = new Set<FormItemInst>()
+    formItems.set(path, items)
+  }
+
+  items.add(item)
+
+  return () => {
+    items?.delete(item)
+
+    if (items?.size === 0) {
+      formItems.delete(path)
+    }
+  }
 }
 
 /**

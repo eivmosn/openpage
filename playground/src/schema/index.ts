@@ -2,6 +2,7 @@ import type { PageSchema } from '@openpage/core'
 import { advancedSection } from './sections/advanced'
 import { basicSection } from './sections/basic'
 import { preferenceSection } from './sections/preference'
+import { querySection } from './sections/query'
 
 export const testSchema: PageSchema = {
   id: 'test-page',
@@ -97,6 +98,7 @@ export const testSchema: PageSchema = {
                   id: 'form',
                   type: 'div',
                   children: [
+                    querySection,
                     basicSection,
                     preferenceSection,
                     advancedSection,
@@ -174,6 +176,44 @@ export const testSchema: PageSchema = {
                     tags: state.tags,
                   })
                   ctx.message.success('校验通过')
+                `,
+              },
+            },
+            {
+              id: 'validate-ignore-query',
+              type: 'button',
+              label: '忽略查询校验',
+              props: {
+                type: 'default',
+              },
+              events: {
+                onclick: `
+                  const valid = await ctx.validate(undefined, {
+                    ignore: ['query-form-row'],
+                  })
+
+                  if (!valid) {
+                    return
+                  }
+
+                  ctx.message.success('已忽略查询区域并完成校验')
+                `,
+              },
+            },
+            {
+              id: 'reset-ignore-query',
+              type: 'button',
+              label: '忽略查询重置',
+              props: {
+                type: 'default',
+              },
+              events: {
+                onclick: `
+                  await ctx.reset(undefined, {
+                    ignore: ['query-form-row'],
+                  })
+
+                  ctx.message.info('已忽略查询区域并重置校验状态')
                 `,
               },
             },
@@ -274,6 +314,11 @@ export const testState: Record<string, unknown> = {
     },
   ],
   progress: 35,
+  queryAddress: '',
+  queryArchiveTime: '',
+  queryGender: '',
+  queryHeight: '',
+  queryUserName: '',
   qrCode: 'https://www.naiveui.com/',
   rating: 3,
   role: '',

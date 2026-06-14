@@ -1,6 +1,6 @@
 import type { CompiledPage } from '../../types/compiled'
 import type { PageContext } from '../../types/page'
-import type { RuntimeClosePageService, RuntimeComponentPatch, RuntimeContextValue, RuntimeOpenPageOptions, RuntimeOpenPageService, RuntimeParentPageContext, RuntimeServices, RuntimeValidateTarget } from '../../types/runtime'
+import type { RuntimeClosePageService, RuntimeComponentPatch, RuntimeContextValue, RuntimeOpenPageOptions, RuntimeOpenPageService, RuntimeParentPageContext, RuntimeServices, RuntimeValidateOptions, RuntimeValidateTarget } from '../../types/runtime'
 import type { OpenPageComponents } from '../../types/ui'
 import { markRaw, reactive, readonly, shallowReactive } from 'vue'
 import { getByPath, setByPath } from '../../utils/path'
@@ -93,7 +93,7 @@ export function updatePageRuntimeOptions(
       return await context.services.openPage(openOptions, context)
     },
     parentParams: readonly(context.params) as Readonly<Record<string, unknown>>,
-    reset: async () => await reset(context),
+    reset: async (target?: RuntimeValidateTarget, resetOptions?: RuntimeValidateOptions) => await reset(context, target, resetOptions),
     setParentState: (pathOrPatch: string | Record<string, unknown>, value?: unknown) => {
       const parent = context.services.parent
 
@@ -106,7 +106,7 @@ export function updatePageRuntimeOptions(
     },
     updateComponentById: (id: string, patch: RuntimeComponentPatch) => updateComponentById(context, id, patch),
     updateComponentByName: (name: string, patch: RuntimeComponentPatch) => updateComponentByName(context, name, patch),
-    validate: async (target?: RuntimeValidateTarget) => await validate(context, target),
+    validate: async (target?: RuntimeValidateTarget, validateOptions?: RuntimeValidateOptions) => await validate(context, target, validateOptions),
   })
 
   context.services.message = context.ctx.message
@@ -117,9 +117,14 @@ export function updatePageRuntimeOptions(
  *
  * @param context 当前渲染器运行时上下文。
  * @param target 需要校验的组件标识或标识数组，不传时校验整个表单。
+ * @param options 当前校验配置。
  * @returns 返回表单是否校验通过。
  */
-async function validate(context: PageContext, target?: RuntimeValidateTarget): Promise<boolean> {
+async function validate(
+  context: PageContext,
+  target?: RuntimeValidateTarget,
+  options?: RuntimeValidateOptions,
+): Promise<boolean> {
   const validateForm = context.services.form?.validate
 
   if (!validateForm) {
@@ -127,16 +132,22 @@ async function validate(context: PageContext, target?: RuntimeValidateTarget): P
     return false
   }
 
-  return await validateForm(target)
+  return await validateForm(target, options)
 }
 
 /**
  * 重置当前表单校验状态。
  *
  * @param context 当前渲染器运行时上下文。
+ * @param target 需要重置的组件标识或标识数组，不传时重置整个表单。
+ * @param options 当前重置配置。
  * @returns 返回表单校验状态是否恢复完成。
  */
-async function reset(context: PageContext): Promise<boolean> {
+async function reset(
+  context: PageContext,
+  target?: RuntimeValidateTarget,
+  options?: RuntimeValidateOptions,
+): Promise<boolean> {
   const resetValidation = context.services.form?.reset
 
   if (!resetValidation) {
@@ -144,7 +155,7 @@ async function reset(context: PageContext): Promise<boolean> {
     return false
   }
 
-  return await resetValidation()
+  return await resetValidation(target, options)
 }
 
 /**

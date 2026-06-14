@@ -1,13 +1,18 @@
+import type { FormItemInst } from 'naive-ui'
 import type { Component } from 'vue'
 import type { NaiveFormFieldBinding } from '../composables/useFormField'
 import { NFormItem, NTooltip } from 'naive-ui'
-import { defineComponent, h } from 'vue'
+import { defineComponent, h, inject, shallowRef, watchEffect } from 'vue'
 import { useFormField } from '../composables/useFormField'
+import { naiveFormItemRegistryKey } from './formItemRegistry'
 import { resolveComponentName } from './resolveComponentName'
 import { uiComponentProps } from './uiComponentProps'
 
 /**
- * 标签下划线
+ * 渲染表单项标签。
+ *
+ * @param field 当前表单字段绑定。
+ * @returns 返回标签渲染内容。
  */
 function formItemLabel(field: NaiveFormFieldBinding) {
   const renderLabel = () => h('div', {
@@ -44,8 +49,23 @@ export function withFormItem(component: Component): Component {
     props: uiComponentProps,
     setup(props, { slots }) {
       const field = useFormField(props)
+      const formItemRef = shallowRef<FormItemInst | null>(null)
+      const formItemRegistry = inject(naiveFormItemRegistryKey, undefined)
+
+      watchEffect((onCleanup) => {
+        const formItem = formItemRef.value
+        const path = field.path.value
+
+        if (!formItem || !path || !formItemRegistry) {
+          return
+        }
+
+        const unregister = formItemRegistry.register(path, formItem)
+        onCleanup(unregister)
+      })
 
       return () => h(NFormItem, {
+        ref: formItemRef,
         path: field.path.value,
         required: field.required.value,
         rule: field.rule.value,

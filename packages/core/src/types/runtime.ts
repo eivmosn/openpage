@@ -26,9 +26,13 @@ export interface RuntimeMessageService {
 
 export type RuntimeValidateTarget = string | string[]
 
+export interface RuntimeValidateOptions {
+  ignore?: string[]
+}
+
 export interface RuntimeFormService {
-  reset: () => Promise<boolean> | boolean
-  validate: (target?: RuntimeValidateTarget) => Promise<boolean> | boolean
+  reset: (target?: RuntimeValidateTarget, options?: RuntimeValidateOptions) => Promise<boolean> | boolean
+  validate: (target?: RuntimeValidateTarget, options?: RuntimeValidateOptions) => Promise<boolean> | boolean
 }
 
 export type RuntimeOpenPageMode = 'modal' | 'drawer'
@@ -84,11 +88,11 @@ export interface RuntimeContextValue extends Record<string, unknown> {
   openPage?: (options: RuntimeOpenPageOptions) => Promise<RuntimeOpenPageResult>
   parentParams?: Readonly<Record<string, unknown>>
   resolvePage?: RuntimePageResolver
-  reset?: () => Promise<boolean>
+  reset?: (target?: RuntimeValidateTarget, options?: RuntimeValidateOptions) => Promise<boolean>
   setParentState?: RuntimeSetStateService
   updateComponentById?: (id: string, patch: RuntimeComponentPatch) => boolean
   updateComponentByName?: (name: string, patch: RuntimeComponentPatch) => boolean
-  validate?: (target?: RuntimeValidateTarget) => Promise<boolean>
+  validate?: (target?: RuntimeValidateTarget, options?: RuntimeValidateOptions) => Promise<boolean>
 }
 
 export interface RuntimeResolvedPage {
