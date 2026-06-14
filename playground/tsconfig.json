@@ -4,6 +4,7 @@
     "tsBuildInfoFile": "../.cache/tsbuildinfo/playground.tsbuildinfo",
     "paths": {
       "@openpage/core": ["../packages/core/src/index.ts"],
+      "@openpage/overlay": ["../packages/overlay/src/index.ts"],
       "@openpage/script-runner": ["../packages/script-runner/src/index.ts"],
       "@openpage/ui": ["../packages/ui/src/index.ts"]
     },

@@ -5,6 +5,7 @@ import { defineConfig, normalizePath } from 'vite'
 
 const librarySourceDirectories = [
   normalizePath(fileURLToPath(new URL('../packages/core/src/', import.meta.url))),
+  normalizePath(fileURLToPath(new URL('../packages/overlay/src/', import.meta.url))),
   normalizePath(fileURLToPath(new URL('../packages/script-runner/src/', import.meta.url))),
   normalizePath(fileURLToPath(new URL('../packages/ui/src/', import.meta.url))),
 ]
@@ -45,6 +46,8 @@ export default defineConfig(() => {
     resolve: {
       alias: {
         '@openpage/core': fileURLToPath(new URL('../packages/core/src/index.ts', import.meta.url)),
+        '@openpage/overlay/style.css': fileURLToPath(new URL('../packages/overlay/src/styles.css', import.meta.url)),
+        '@openpage/overlay': fileURLToPath(new URL('../packages/overlay/src/index.ts', import.meta.url)),
         '@openpage/script-runner': fileURLToPath(new URL('../packages/script-runner/src/index.ts', import.meta.url)),
         '@openpage/ui': fileURLToPath(new URL('../packages/ui/src/index.ts', import.meta.url)),
       },

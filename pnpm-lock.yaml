@@ -199,6 +199,9 @@ importers:
       '@openpage/core':
         specifier: workspace:*
         version: link:../packages/core
+      '@openpage/overlay':
+        specifier: workspace:*
+        version: link:../packages/overlay
       '@openpage/script-runner':
         specifier: workspace:*
         version: link:../packages/script-runner
