@@ -11,7 +11,7 @@ import { getModelValue, setModelValue } from './model'
 export function applyComponentDefaultValues(context: RuntimeContext): void {
   let changed = false
 
-  for (const component of context.compiled.components.values()) {
+  for (const component of context.compiled.defaultValueComponents) {
     changed = applyComponentDefaultValue(context, component) || changed
   }
 

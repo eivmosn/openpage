@@ -9,17 +9,23 @@ import { runActions } from './actions'
  * @returns 返回可执行脚本事件的运行时上下文。
  */
 function createRuntimeContext(state: Record<string, unknown>): RuntimeContext {
+  const ctx: RuntimeContext['ctx'] = {}
+
   return {
     compiled: {
       id: 'test-page',
       children: [],
       components: new Map(),
       componentNames: new Map(),
+      modelComponents: [],
+      computedComponents: [],
+      defaultValueComponents: [],
       interactionCss: '',
     },
     componentPatches: {},
-    ctx: {},
+    ctx,
     params: {},
+    readonlyCtx: ctx,
     services: {
       message: {
         error: vi.fn(),

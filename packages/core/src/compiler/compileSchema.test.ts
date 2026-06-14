@@ -23,9 +23,11 @@ describe('compileSchema', () => {
     expect(compiled.components.get('keyword')?.model).toEqual({
       path: 'search.keyword',
     })
+    expect(compiled.components.get('keyword')?.modelPaths).toEqual(['search.keyword'])
     expect(compiled.components.get('title')?.model).toEqual({
       path: 'title',
     })
+    expect(compiled.modelComponents.map(component => component.id)).toEqual(['keyword', 'title'])
     expect(compiled.componentNames.get('search.keyword')).toBe('keyword')
   })
 
@@ -44,7 +46,32 @@ describe('compileSchema', () => {
     expect(compiled.components.get('date-range')?.model).toEqual({
       paths: ['start', 'end'],
     })
+    expect(compiled.components.get('date-range')?.modelPaths).toEqual(['start,end'])
     expect(compiled.componentNames.get('start,end')).toBe('date-range')
+  })
+
+  it('indexes subtree model paths for scoped runtime operations', () => {
+    const compiled = compileSchema({
+      id: 'page',
+      children: [{
+        id: 'query-form-row',
+        type: 'div',
+        children: [{
+          id: 'keyword',
+          type: 'input',
+          name: 'query.keyword',
+        }, {
+          id: 'date-range',
+          type: 'daterange',
+          name: 'query.start,query.end',
+        }],
+      }],
+    })
+
+    expect(compiled.components.get('query-form-row')?.modelPaths).toEqual([
+      'query.keyword',
+      'query.start,query.end',
+    ])
   })
 
   it('supports configurable dynamic component fields', () => {
@@ -63,6 +90,7 @@ describe('compileSchema', () => {
     const context = {
       ctx: {},
       params: {},
+      readonlyCtx: {},
       services: {
         notifyStateChange: () => {},
       },

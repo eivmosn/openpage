@@ -1,5 +1,4 @@
 import type { RuntimeContext } from '../types/runtime'
-import { readonly } from 'vue'
 import { getCachedValue } from '../utils/cache'
 import { setByPath } from '../utils/path'
 
@@ -12,7 +11,9 @@ export type ExpressionValueResolver = (
 
 const expressionCache = new Map<string, ExpressionRunner>()
 const warnedExpressionErrors = new Set<string>()
+const baseExpressionScopeCache = new WeakMap<RuntimeContext, Record<string, unknown>>()
 const stateScopeCache = new WeakMap<Record<string, unknown>, Record<string, unknown>>()
+const emptyExpressionScope: Record<string, unknown> = {}
 
 /**
  * 判断配置值是否为模板表达式。
@@ -77,7 +78,7 @@ export function parseTemplateExpression(value: string): string | undefined {
 export function resolveExpressionValue(
   value: unknown,
   context: RuntimeContext,
-  scope: Record<string, unknown> = {},
+  scope: Record<string, unknown> = emptyExpressionScope,
 ): unknown {
   if (isTemplateExpression(value)) {
     return evaluateExpression(value, context, scope)
@@ -106,13 +107,13 @@ export function compileExpressionValue(value: unknown): ExpressionValueResolver 
 
     if (expression) {
       const runExpression = getCachedValue(expressionCache, expression, () => compileExpression(expression))
-      return (context, scope = {}) => runExpression(createExpressionScope(context, scope))
+      return (context, scope = emptyExpressionScope) => runExpression(createExpressionScope(context, scope))
     }
   }
 
   if (Array.isArray(value)) {
     const itemResolvers = value.map(item => compileExpressionValue(item))
-    return (context, scope = {}) => itemResolvers.map(resolveItem => resolveItem(context, scope))
+    return (context, scope = emptyExpressionScope) => itemResolvers.map(resolveItem => resolveItem(context, scope))
   }
 
   if (isPlainRecord(value)) {
@@ -121,7 +122,7 @@ export function compileExpressionValue(value: unknown): ExpressionValueResolver 
       compileExpressionValue(entryValue),
     ] as const)
 
-    return (context, scope = {}) => {
+    return (context, scope = emptyExpressionScope) => {
       const resolvedRecord: Record<string, unknown> = {}
 
       for (const [key, resolveEntry] of entries) {
@@ -146,7 +147,7 @@ export function compileExpressionValue(value: unknown): ExpressionValueResolver 
 export function evaluateRecord(
   record: Record<string, unknown>,
   context: RuntimeContext,
-  scope: Record<string, unknown> = {},
+  scope: Record<string, unknown> = emptyExpressionScope,
 ): Record<string, unknown> {
   const evaluatedRecord: Record<string, unknown> = {}
 
@@ -206,11 +207,37 @@ function evaluateExpression(
  * @returns 返回表达式可访问的作用域对象。
  */
 function createExpressionScope(context: RuntimeContext, scope: Record<string, unknown>): Record<string, unknown> {
+  if (scope === emptyExpressionScope) {
+    return createBaseExpressionScope(context)
+  }
+
   return {
     ...scope,
-    ctx: readonly(context.ctx) as Readonly<RuntimeContext['ctx']>,
+    ctx: context.readonlyCtx,
     state: createStateScope(context.state),
   }
+}
+
+/**
+ * 创建并缓存无局部变量的表达式基础作用域。
+ *
+ * @param context 当前渲染器运行时上下文。
+ * @returns 返回可复用的表达式基础作用域。
+ */
+function createBaseExpressionScope(context: RuntimeContext): Record<string, unknown> {
+  const cachedScope = baseExpressionScopeCache.get(context)
+
+  if (cachedScope) {
+    return cachedScope
+  }
+
+  const baseScope = {
+    ctx: context.readonlyCtx,
+    state: createStateScope(context.state),
+  }
+
+  baseExpressionScopeCache.set(context, baseScope)
+  return baseScope
 }
 
 /**

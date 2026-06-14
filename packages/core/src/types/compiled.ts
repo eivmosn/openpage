@@ -7,6 +7,9 @@ export interface CompiledPage {
   children: string[]
   components: Map<string, CompiledComponent>
   componentNames: Map<string, string>
+  modelComponents: readonly CompiledModelComponent[]
+  computedComponents: readonly CompiledComponent[]
+  defaultValueComponents: readonly CompiledComponent[]
   interactionCss: string
 }
 
@@ -24,6 +27,7 @@ export interface CompiledComponent {
   computedValue?: unknown
   required?: unknown
   labelWidth?: string | number | undefined
+  modelPaths: readonly string[]
   props: Record<string, unknown>
   staticProps: Record<string, unknown>
   dynamicProps: readonly CompiledDynamicProp[]
@@ -33,6 +37,10 @@ export interface CompiledComponent {
   dynamic: CompiledComponentDynamicFields
   dynamicResolvers: CompiledComponentDynamicResolvers
   interactionClassName?: string
+}
+
+export interface CompiledModelComponent extends CompiledComponent {
+  model: CompiledComponentModel
 }
 
 export interface CompiledComponentDynamicFields {

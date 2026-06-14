@@ -1,9 +1,11 @@
 import type { CompiledComponent } from '../types/compiled'
-import { computed, defineComponent, h } from 'vue'
+import { defineComponent, h } from 'vue'
 import { runActions } from '../runtime/actions'
 import { resolveRuntimeComponent } from '../runtime/components'
-import { useComponentModel } from '../runtime/vue/useComponentModel'
+import { getModelValue, setModelValue } from '../runtime/model'
 import { usePageContext } from '../runtime/vue/usePageContext'
+
+const renderedComponentCache = new WeakMap<CompiledComponent, CompiledComponent>()
 
 export const Component = defineComponent({
   name: 'OpenPageComponent',
@@ -17,32 +19,7 @@ export const Component = defineComponent({
     const context = usePageContext()
     let cachedChildren: CompiledComponent['children'] | undefined
     let cachedChildrenVNodes: unknown
-
-    const component = computed(() => {
-      const compiledComponent = context.compiled.components.get(props.id)
-
-      if (!compiledComponent) {
-        throw new Error(`[openpage] component not found: ${props.id}`)
-      }
-
-      return compiledComponent
-    })
-
-    const runtimeComponent = computed(() => resolveRuntimeComponent(context, component.value))
-
-    const renderedComponent = computed<CompiledComponent>(() => {
-      const currentComponent = runtimeComponent.value
-      const dynamicValues = resolveComponentDynamicValues(currentComponent)
-
-      return {
-        ...currentComponent,
-        ...dynamicValues,
-        dynamicValues,
-        props: evaluateComponentProps(currentComponent),
-      }
-    })
-
-    const model = useComponentModel(runtimeComponent, context)
+    let latestRuntimeComponent: CompiledComponent | undefined
 
     /**
      * 触发当前组件配置的事件动作。
@@ -51,7 +28,65 @@ export const Component = defineComponent({
      * @param payload 事件携带的数据。
      */
     function emitComponentEvent(eventName: string, payload?: unknown): Promise<void> {
-      return runActions(runtimeComponent.value.events[eventName], context, payload)
+      return runActions(latestRuntimeComponent?.events[eventName], context, payload)
+    }
+
+    /**
+     * 读取当前运行时组件。
+     *
+     * @returns 返回合并运行时 patch 后的组件。
+     */
+    function resolveCurrentComponent(): CompiledComponent {
+      const compiledComponent = context.compiled.components.get(props.id)
+
+      if (!compiledComponent) {
+        throw new Error(`[openpage] component not found: ${props.id}`)
+      }
+
+      return resolveRuntimeComponent(context, compiledComponent)
+    }
+
+    /**
+     * 创建可传给 UI 组件的渲染组件配置。
+     *
+     * @param currentComponent 当前运行时组件。
+     * @returns 返回已计算动态字段和动态 props 的组件配置。
+     */
+    function resolveRenderedComponent(currentComponent: CompiledComponent): CompiledComponent {
+      if (currentComponent.dynamic.fields.length === 0 && currentComponent.dynamicProps.length === 0) {
+        return resolveCachedRenderedComponent(currentComponent)
+      }
+
+      const dynamicValues = resolveComponentDynamicValues(currentComponent)
+
+      return {
+        ...currentComponent,
+        ...dynamicValues,
+        dynamicValues,
+        props: evaluateComponentProps(currentComponent),
+      }
+    }
+
+    /**
+     * 读取静态组件的缓存渲染配置。
+     *
+     * @param currentComponent 当前运行时组件。
+     * @returns 返回复用的静态渲染组件配置。
+     */
+    function resolveCachedRenderedComponent(currentComponent: CompiledComponent): CompiledComponent {
+      const cachedComponent = renderedComponentCache.get(currentComponent)
+
+      if (cachedComponent) {
+        return cachedComponent
+      }
+
+      const renderedComponent = {
+        ...currentComponent,
+        props: currentComponent.staticProps,
+      }
+
+      renderedComponentCache.set(currentComponent, renderedComponent)
+      return renderedComponent
     }
 
     /**
@@ -83,27 +118,12 @@ export const Component = defineComponent({
     function resolveComponentDynamicValues(currentComponent: CompiledComponent): Record<string, unknown> {
       const dynamicValues: Record<string, unknown> = {}
 
-      for (const field of currentComponent.dynamicFieldKeys) {
+      for (const field of currentComponent.dynamic.fields) {
         const resolveValue = currentComponent.dynamicResolvers[field]
-        dynamicValues[field] = resolveValue
-          ? resolveValue(context)
-          : currentComponent.dynamicValues[field]
+        dynamicValues[field] = resolveValue(context)
       }
 
       return dynamicValues
-    }
-
-    /**
-     * 判断当前组件是否允许渲染。
-     *
-     * @returns 返回当前组件是否可见。
-     */
-    function isComponentVisible(): boolean {
-      if (runtimeComponent.value.visible === undefined) {
-        return true
-      }
-
-      return Boolean(renderedComponent.value.visible)
     }
 
     /**
@@ -111,8 +131,8 @@ export const Component = defineComponent({
      *
      * @returns 返回 Vue 子组件数组。
      */
-    function renderChildren(): unknown {
-      const children = runtimeComponent.value.children
+    function renderChildren(component: CompiledComponent): unknown {
+      const children = component.children
 
       if (cachedChildren === children) {
         return cachedChildrenVNodes
@@ -134,29 +154,47 @@ export const Component = defineComponent({
      *
      * @returns 返回 UI 组件接收的组件属性。
      */
-    function resolveComponentProps() {
+    function resolveComponentProps(runtimeComponent: CompiledComponent, renderedComponent: CompiledComponent) {
       return {
-        component: renderedComponent.value,
+        component: renderedComponent,
         context,
-        value: model.value.value,
+        value: runtimeComponent.model ? getModelValue(context.state, runtimeComponent.model) : undefined,
         emitComponentEvent,
-        updateModelValue: model.updateValue,
+        updateModelValue,
       }
     }
 
+    /**
+     * 更新组件模型对应的页面状态。
+     *
+     * @param value 组件上报的新值。
+     */
+    function updateModelValue(value: unknown): void {
+      if (!latestRuntimeComponent?.model) {
+        return
+      }
+
+      setModelValue(context.state, latestRuntimeComponent.model, value)
+      context.services.notifyStateChange()
+    }
+
     return () => {
-      if (!isComponentVisible()) {
+      const runtimeComponent = resolveCurrentComponent()
+      latestRuntimeComponent = runtimeComponent
+      const renderedComponent = resolveRenderedComponent(runtimeComponent)
+
+      if (runtimeComponent.visible !== undefined && !renderedComponent.visible) {
         return null
       }
 
-      const component = context.components[renderedComponent.value.type]
+      const component = context.components[renderedComponent.type]
 
       if (!component) {
-        return h('div', { class: 'openpage-missing-component' }, `Missing component type: ${renderedComponent.value.type}`)
+        return h('div', { class: 'openpage-missing-component' }, `Missing component type: ${renderedComponent.type}`)
       }
 
-      return h(component, resolveComponentProps(), {
-        default: renderChildren,
+      return h(component, resolveComponentProps(runtimeComponent, renderedComponent), {
+        default: () => renderChildren(runtimeComponent),
       })
     }
   },

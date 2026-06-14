@@ -1,9 +1,10 @@
-import type { CompiledComponent, CompiledPage } from '../types/compiled'
+import type { CompiledComponent, CompiledModelComponent, CompiledPage } from '../types/compiled'
 import type { ComponentSchema, PageSchema } from '../types/schema'
 import type { CompileSchemaOptions } from './options'
 import { markRaw } from 'vue'
-import { collectPageInteractionCss, createInteractionClassName } from '../interactions/css'
+import { collectPageInteractionCss, createInteractionClassName, hasInteractionProps } from '../interactions/css'
 import { compileExpressionValue, hasTemplateExpression } from '../runtime/expression'
+import { getModelKey } from '../runtime/model'
 import { compileProps } from './compileProps'
 import { resolveCompileSchemaOptions } from './options'
 
@@ -19,6 +20,7 @@ export function compileSchema(schema: PageSchema, options?: CompileSchemaOptions
   const components = new Map<string, CompiledComponent>()
   const componentNames = new Map<string, string>()
   const children = compileChildren(schema.id, schema.children, components, componentNames, compileOptions.dynamicFieldKeys)
+  const componentIndexes = collectComponentIndexes(components)
 
   return markRaw({
     id: schema.id,
@@ -26,6 +28,7 @@ export function compileSchema(schema: PageSchema, options?: CompileSchemaOptions
     children,
     components: markRaw(components),
     componentNames: markRaw(componentNames),
+    ...componentIndexes,
     interactionCss: collectPageInteractionCss(schema),
   })
 }
@@ -69,7 +72,11 @@ function compileComponent(
 ): string {
   const children = (component.children || []).map(child => compileComponent(pageId, child, components, componentNames, dynamicFieldKeys))
   const model = resolveComponentModel(component)
+  const modelPaths = resolveComponentModelPaths(model, children, components)
   const props = component.props || {}
+  const interactionClassName = hasInteractionProps(props)
+    ? createInteractionClassName(pageId, component.id)
+    : undefined
   const compiledProps = compileProps(props)
   const dynamicResolvers = resolveDynamicFieldResolvers(component, dynamicFieldKeys)
 
@@ -112,6 +119,8 @@ function compileComponent(
     events: markRaw(component.events || {}),
     // 自动推导出的状态绑定路径，例如 username、search.keyword 或 start,end。
     model,
+    // 当前组件子树内所有模型路径，供 validate/reset 等运行时范围操作直接命中。
+    modelPaths,
     // 动态字段索引摘要，主要用于调试和运行时快速判断哪些字段/props 是动态的。
     dynamic: markRaw({
       fields: Object.freeze(Object.keys(dynamicResolvers)),
@@ -120,7 +129,7 @@ function compileComponent(
     // 动态字段预编译 resolver，避免渲染时重复解析表达式字符串。
     dynamicResolvers: markRaw(dynamicResolvers),
     // 页面级稳定交互样式类名，与 interactionCss 中生成的选择器对应。
-    interactionClassName: createInteractionClassName(pageId, component.id),
+    interactionClassName,
   }))
 
   if (component.name) {
@@ -128,6 +137,72 @@ function compileComponent(
   }
 
   return component.id
+}
+
+/**
+ * 收集当前页面运行时热路径索引。
+ *
+ * @param components 编译组件索引表。
+ * @returns 返回运行时可直接消费的组件索引。
+ */
+function collectComponentIndexes(
+  components: Map<string, CompiledComponent>,
+): Pick<CompiledPage, 'computedComponents' | 'defaultValueComponents' | 'modelComponents'> {
+  const modelComponents: CompiledModelComponent[] = []
+  const computedComponents: CompiledComponent[] = []
+  const defaultValueComponents: CompiledComponent[] = []
+
+  for (const component of components.values()) {
+    if (!component.model) {
+      continue
+    }
+
+    modelComponents.push(component as CompiledModelComponent)
+
+    if (component.computedValue !== undefined) {
+      computedComponents.push(component)
+    }
+
+    if (component.defaultValue !== undefined) {
+      defaultValueComponents.push(component)
+    }
+  }
+
+  return markRaw({
+    computedComponents: markRaw(Object.freeze(computedComponents)),
+    defaultValueComponents: markRaw(Object.freeze(defaultValueComponents)),
+    modelComponents: markRaw(Object.freeze(modelComponents)),
+  })
+}
+
+/**
+ * 收集当前组件子树内所有模型路径。
+ *
+ * @param model 当前组件模型配置。
+ * @param children 当前组件子组件 id 列表。
+ * @param components 编译组件索引表。
+ * @returns 返回当前组件及子组件的模型路径列表。
+ */
+function resolveComponentModelPaths(
+  model: CompiledComponent['model'],
+  children: readonly string[],
+  components: Map<string, CompiledComponent>,
+): readonly string[] {
+  const paths: string[] = []
+
+  if (model) {
+    paths.push(getModelKey(model))
+  }
+
+  for (const childId of children) {
+    const child = components.get(childId)
+
+    if (child?.modelPaths.length) {
+      paths.push(...child.modelPaths)
+    }
+  }
+
+  return markRaw(Object.freeze(paths))
 }
 
 /**

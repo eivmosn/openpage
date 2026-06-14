@@ -3,7 +3,7 @@ import type { PageSchema } from './schema'
 
 export type RuntimeComponentPatch = Partial<Omit<
   CompiledComponent,
-  'children' | 'dynamic' | 'dynamicFieldKeys' | 'dynamicProps' | 'dynamicResolvers' | 'dynamicValues' | 'events' | 'id' | 'interactionClassName' | 'model' | 'props' | 'staticProps'
+  'children' | 'dynamic' | 'dynamicFieldKeys' | 'dynamicProps' | 'dynamicResolvers' | 'dynamicValues' | 'events' | 'id' | 'interactionClassName' | 'model' | 'modelPaths' | 'props' | 'staticProps'
 >> & {
   children?: string[]
   events?: Record<string, CompiledComponent['events'][string]>
@@ -12,7 +12,7 @@ export type RuntimeComponentPatch = Partial<Omit<
 }
 export type ResolvedRuntimeComponentPatch = RuntimeComponentPatch & Pick<
   CompiledComponent,
-  'dynamic' | 'dynamicFieldKeys' | 'dynamicProps' | 'dynamicResolvers' | 'dynamicValues' | 'staticProps'
+  'dynamic' | 'dynamicFieldKeys' | 'dynamicProps' | 'dynamicResolvers' | 'dynamicValues' | 'modelPaths' | 'staticProps'
 > & {
   resolvedComponent: CompiledComponent
 }
@@ -126,6 +126,7 @@ export interface RuntimeContext {
   compiled: CompiledPage
   ctx: RuntimeContextValue
   params: Record<string, unknown>
+  readonlyCtx: Readonly<RuntimeContextValue>
   state: Record<string, unknown>
   services: RuntimeServices
   componentPatches: Record<string, ResolvedRuntimeComponentPatch | undefined>

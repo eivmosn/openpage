@@ -16,6 +16,9 @@ function createRuntimeContext(state: Record<string, unknown>): RuntimeContext {
       children: [],
       components: new Map(),
       componentNames: new Map(),
+      modelComponents: [],
+      computedComponents: [],
+      defaultValueComponents: [],
       interactionCss: '',
     },
     componentPatches: {},
@@ -23,6 +26,9 @@ function createRuntimeContext(state: Record<string, unknown>): RuntimeContext {
       ...valueRuntimeHelpers,
     },
     params: {},
+    readonlyCtx: {
+      ...valueRuntimeHelpers,
+    },
     services: {
       notifyStateChange: vi.fn(),
     },

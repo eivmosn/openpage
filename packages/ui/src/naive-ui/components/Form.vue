@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { CompiledComponent, RuntimeValidateOptions, RuntimeValidateTarget } from '@openpage/core'
+import type { RuntimeModelPathSet, RuntimeValidateOptions, RuntimeValidateTarget } from '@openpage/core'
 import type { FormInst, FormItemInst, FormItemRule, FormValidationError } from 'naive-ui'
 import type { UiFormProps } from '../../types'
-import { getModelKey, getModelValue } from '@openpage/core'
+import { getModelKey, getModelValue, resolveRuntimeModelPaths, shouldHandleRuntimeModelPath } from '@openpage/core'
 import { NForm } from 'naive-ui'
 import { computed, onBeforeUnmount, provide, useTemplateRef } from 'vue'
 import { naiveFormItemRegistryKey } from '../utils/formItemRegistry'
@@ -66,7 +66,7 @@ function unregisterFormService(
  */
 async function validate(target?: RuntimeValidateTarget, options?: RuntimeValidateOptions): Promise<boolean> {
   try {
-    const paths = resolveValidatePaths(target, options)
+    const paths = resolveRuntimeModelPaths(props.context, target, options)
 
     await formRef.value?.validate(undefined, paths
       ? rule => shouldValidateRule(rule, paths)
@@ -92,114 +92,12 @@ async function validate(target?: RuntimeValidateTarget, options?: RuntimeValidat
  * @param paths 本次字段校验配置。
  * @returns 返回当前规则是否需要执行。
  */
-function shouldValidateRule(rule: FormItemRule, paths: ValidatePathSet): boolean {
+function shouldValidateRule(rule: FormItemRule, paths: RuntimeModelPathSet): boolean {
   if (typeof rule.key !== 'string') {
     return false
   }
 
-  if (paths.ignored.has(rule.key)) {
-    return false
-  }
-
-  return paths.included ? paths.included.has(rule.key) : true
-}
-
-/**
- * 解析本次校验需要覆盖的字段路径集合。
- *
- * @param target 组件标识、组件标识数组或空值。
- * @param options 当前校验配置。
- * @returns 不传目标且没有忽略项时返回空值；否则返回字段路径集合。
- */
-function resolveValidatePaths(target?: RuntimeValidateTarget, options?: RuntimeValidateOptions): ValidatePathSet | undefined {
-  if (target === undefined && !options?.ignore?.length) {
-    return undefined
-  }
-
-  const included = target === undefined ? undefined : new Set<string>()
-  const ignored = new Set<string>()
-  const targets = Array.isArray(target) ? target : [target]
-
-  for (const item of targets) {
-    if (item !== undefined) {
-      resolveValidatePathsByTarget(item, included)
-    }
-  }
-
-  for (const item of options?.ignore || []) {
-    resolveValidatePathsByTarget(item, ignored)
-  }
-
-  return {
-    ignored,
-    included,
-  }
-}
-
-/**
- * 将组件标识解析为表单字段路径集合。
- *
- * @param target 组件 id、组件 name 或直接字段路径。
- * @param paths 需要写入的字段路径集合。
- */
-function resolveValidatePathsByTarget(target: string, paths: Set<string> | undefined): void {
-  if (!paths) {
-    return
-  }
-
-  const component = resolveValidateComponent(target)
-
-  if (!component) {
-    paths.add(target)
-    return
-  }
-
-  collectValidatePaths(component, paths)
-}
-
-/**
- * 按组件 id 或组件 name 查找需要校验的组件。
- *
- * @param target 组件 id 或组件 name。
- * @returns 返回匹配到的编译后组件。
- */
-function resolveValidateComponent(target: string): CompiledComponent | undefined {
-  const directComponent = props.context.compiled.components.get(target)
-
-  if (directComponent) {
-    return directComponent
-  }
-
-  const namedComponentId = props.context.compiled.componentNames.get(target)
-
-  return namedComponentId
-    ? props.context.compiled.components.get(namedComponentId)
-    : undefined
-}
-
-/**
- * 递归收集组件及其子组件的表单字段路径。
- *
- * @param component 当前组件。
- * @param paths 需要写入的字段路径集合。
- */
-function collectValidatePaths(component: CompiledComponent, paths: Set<string>): void {
-  if (component.model) {
-    paths.add(getModelKey(component.model))
-  }
-
-  for (const childId of component.children) {
-    const child = props.context.compiled.components.get(childId)
-
-    if (child) {
-      collectValidatePaths(child, paths)
-    }
-  }
-}
-
-interface ValidatePathSet {
-  ignored: Set<string>
-  included?: Set<string>
+  return shouldHandleRuntimeModelPath(rule.key, paths)
 }
 
 /**
@@ -210,7 +108,7 @@ interface ValidatePathSet {
  * @returns 返回重置是否完成。
  */
 function reset(target?: RuntimeValidateTarget, options?: RuntimeValidateOptions): boolean {
-  const paths = resolveValidatePaths(target, options)
+  const paths = resolveRuntimeModelPaths(props.context, target, options)
 
   if (!paths) {
     formRef.value?.restoreValidation()
@@ -237,12 +135,8 @@ function reset(target?: RuntimeValidateTarget, options?: RuntimeValidateOptions)
  * @param paths 本次字段操作配置。
  * @returns 返回当前字段是否需要处理。
  */
-function shouldHandlePath(path: string, paths: ValidatePathSet): boolean {
-  if (paths.ignored.has(path)) {
-    return false
-  }
-
-  return paths.included ? paths.included.has(path) : true
+function shouldHandlePath(path: string, paths: RuntimeModelPathSet): boolean {
+  return shouldHandleRuntimeModelPath(path, paths)
 }
 
 /**
@@ -281,12 +175,16 @@ function resolveFormModel(): Record<string, unknown> {
     ...props.context.state,
   }
 
-  for (const component of props.context.compiled.components.values()) {
-    if (!component.model) {
-      continue
-    }
-
+  for (const component of props.context.compiled.modelComponents) {
     model[getModelKey(component.model)] = getModelValue(props.context.state, component.model)
+  }
+
+  for (const patch of Object.values(props.context.componentPatches)) {
+    const patchedComponent = patch?.resolvedComponent
+
+    if (patchedComponent?.model) {
+      model[getModelKey(patchedComponent.model)] = getModelValue(props.context.state, patchedComponent.model)
+    }
   }
 
   return model

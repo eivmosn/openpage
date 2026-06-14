@@ -40,6 +40,16 @@ export function omitInteractionProps(props: Record<string, unknown>): Record<str
 }
 
 /**
+ * 判断组件属性中是否配置了交互样式。
+ *
+ * @param props 当前组件属性。
+ * @returns 返回是否存在交互样式配置。
+ */
+export function hasInteractionProps(props: Record<string, unknown>): boolean {
+  return INTERACTION_KEYS.some(key => props[key] !== undefined)
+}
+
+/**
  * 收集页面内所有组件的交互 CSS。
  *
  * @param schema 当前页面 Schema。
@@ -55,8 +65,15 @@ export function collectPageInteractionCss(schema: PageSchema): string {
    * @param component 当前 Schema 组件。
    */
   function walk(component: ComponentSchema): void {
+    const props = component.props || {}
+
+    if (!hasInteractionProps(props)) {
+      component.children?.forEach(walk)
+      return
+    }
+
     const className = createInteractionClassName(schema.id, component.id)
-    const css = createComponentInteractionCss(className, component.props || {})
+    const css = createComponentInteractionCss(className, props)
 
     if (css) {
       blocks.push(css)

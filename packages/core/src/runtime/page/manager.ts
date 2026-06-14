@@ -67,6 +67,7 @@ const NestedOverlayPage = defineComponent({
   },
   setup(props) {
     const overlayContext = useOverlayContext<RuntimeOpenPageResult>()
+    const parent = createParentPageContext(props.parentContext)
 
     return () => {
       const pageProps: Record<string, unknown> = {
@@ -75,7 +76,7 @@ const NestedOverlayPage = defineComponent({
         ctx: props.ctx,
         initState: props.initState,
         params: props.params,
-        parent: createParentPageContext(props.parentContext),
+        parent,
         schema: props.schema,
       }
 

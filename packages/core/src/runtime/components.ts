@@ -2,6 +2,7 @@ import type { CompiledComponent } from '../types/compiled'
 import type { ResolvedRuntimeComponentPatch, RuntimeComponentPatch, RuntimeContext } from '../types/runtime'
 import { compileProps } from '../compiler/compileProps'
 import { compileExpressionValue, hasTemplateExpression } from './expression'
+import { getModelKey } from './model'
 
 /**
  * 通过组件 id 获取运行时组件。
@@ -52,7 +53,7 @@ export function updateComponentById(context: RuntimeContext, id: string, patch: 
     return false
   }
 
-  context.componentPatches[id] = mergeComponentPatch(component, context.componentPatches[id], patch)
+  context.componentPatches[id] = mergeComponentPatch(context, component, context.componentPatches[id], patch)
   return true
 }
 
@@ -94,12 +95,14 @@ export function resolveRuntimeComponent(context: RuntimeContext, component: Comp
 /**
  * 合并两次运行时组件更新。
  *
+ * @param context 当前渲染器运行时上下文。
  * @param component 原始编译组件。
  * @param previous 已存在的组件更新。
  * @param patch 新的组件更新。
  * @returns 返回合并后的组件更新。
  */
 function mergeComponentPatch(
+  context: RuntimeContext,
   component: CompiledComponent,
   previous: ResolvedRuntimeComponentPatch | undefined,
   patch: RuntimeComponentPatch,
@@ -124,6 +127,9 @@ function mergeComponentPatch(
   const compiledProps = compileProps(props)
   const dynamicValues = resolveDynamicValues(component, nextPatch)
   const dynamicResolvers = resolveDynamicFieldResolvers(component.dynamicFieldKeys, dynamicValues)
+  const children = nextPatch.children || component.children
+  const model = nextPatch.model || component.model
+  const modelPaths = resolvePatchedModelPaths(context, component, model, children)
 
   const resolvedPatch: ResolvedRuntimeComponentPatch = {
     ...nextPatch,
@@ -135,6 +141,7 @@ function mergeComponentPatch(
     dynamicValues,
     dynamicFieldKeys: component.dynamicFieldKeys,
     dynamicResolvers,
+    modelPaths,
     staticProps: compiledProps.staticProps,
     dynamicProps: compiledProps.dynamicProps,
     resolvedComponent: component,
@@ -147,14 +154,51 @@ function mergeComponentPatch(
       ...component.events,
       ...resolvedPatch.events,
     },
-    children: nextPatch.children || component.children,
-    model: nextPatch.model || component.model,
+    children,
+    model,
+    modelPaths,
   }
 
   return {
     ...resolvedPatch,
     resolvedComponent,
   }
+}
+
+/**
+ * 解析运行时 patch 后的模型路径索引。
+ *
+ * @param context 当前渲染器运行时上下文。
+ * @param component 原始编译组件。
+ * @param model 合并后的组件模型。
+ * @param children 合并后的子组件 id 列表。
+ * @returns 返回 patch 后的子树模型路径。
+ */
+function resolvePatchedModelPaths(
+  context: RuntimeContext,
+  component: CompiledComponent,
+  model: CompiledComponent['model'],
+  children: readonly string[],
+): readonly string[] {
+  if (model === component.model && children === component.children) {
+    return component.modelPaths
+  }
+
+  const paths: string[] = []
+
+  if (model) {
+    paths.push(getModelKey(model))
+  }
+
+  for (const childId of children) {
+    const child = context.compiled.components.get(childId)
+
+    if (child?.modelPaths.length) {
+      paths.push(...child.modelPaths)
+    }
+  }
+
+  return Object.freeze(paths)
 }
 
 /**

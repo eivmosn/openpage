@@ -1,7 +1,6 @@
 import type { RuntimeContext } from '../types/runtime'
 import type { EventSchema, StaticEventActionSchema } from '../types/schema'
 import { runScript } from '@openpage/script-runner'
-import { readonly } from 'vue'
 import { setByPath } from '../utils/path'
 import { resolveExpressionValue } from './expression'
 
@@ -44,7 +43,7 @@ export async function runActions(event: EventSchema | undefined, context: Runtim
 function runStaticEvent(action: StaticEventActionSchema, context: RuntimeContext, payload?: unknown): void {
   const scope = {
     $event: payload,
-    ctx: readonly(context.ctx),
+    ctx: context.readonlyCtx,
   }
 
   for (const [path, value] of Object.entries(action.dependency)) {
@@ -66,7 +65,7 @@ async function runScriptEvent(script: string, context: RuntimeContext, payload?:
     state: context.state,
     scope: {
       $event: payload,
-      ctx: readonly(context.ctx),
+      ctx: context.readonlyCtx,
     },
     formatErrorMessage: ({ phase, message }) => `OpenPage script ${phase} error: ${message}`,
   })

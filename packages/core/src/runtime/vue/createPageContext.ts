@@ -43,6 +43,7 @@ export function createPageContext(
     compiled,
     ctx: runtimeCtx,
     params: options.params || {},
+    readonlyCtx: readonly(runtimeCtx) as Readonly<RuntimeContextValue>,
     state: createReactiveState(state),
     components: markRaw(components),
     services,

@@ -38,6 +38,11 @@ export function useComputedValues(context: ShallowRef<RuntimeContext | undefined
         () => runtimeContext.compiled,
         () => {
           computedScope?.stop()
+          if (runtimeContext.compiled.computedComponents.length === 0) {
+            computedScope = undefined
+            return
+          }
+
           computedScope = createComputedScope(runtimeContext)
         },
         {
@@ -67,11 +72,7 @@ function createComputedScope(context: RuntimeContext): EffectScope {
   const scope = effectScope()
 
   scope.run(() => {
-    for (const component of context.compiled.components.values()) {
-      if (component.computedValue === undefined || !component.model) {
-        continue
-      }
-
+    for (const component of context.compiled.computedComponents) {
       watch(
         () => resolveExpressionValue(component.computedValue, context),
         value => syncComputedValue(component, context, value),

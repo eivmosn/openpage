@@ -8,6 +8,8 @@ import { resolveExpressionValue } from '../runtime/expression'
 import { Component } from './Component'
 
 const context = {
+  ctx: {},
+  readonlyCtx: {},
   state: {
     active: true,
     count: 12,
@@ -176,12 +178,15 @@ function createPatchedContext(): RuntimeContext {
     }],
   })
   const runtimeContext = {
+    componentPatches: {},
     compiled,
+    ctx: {},
+    params: {},
+    readonlyCtx: {},
     state: context.state,
     services: {
       notifyStateChange: () => {},
     },
-    componentPatches: {},
   } as RuntimeContext
 
   updateComponentById(runtimeContext, 'patched-component', {
