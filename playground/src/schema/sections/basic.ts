@@ -105,6 +105,38 @@ export const basicSection: ComponentSchema = {
                 `,
               },
             },
+            {
+              id: 'open-profile-page',
+              type: 'button',
+              label: '资料 Drawer',
+              props: {
+                tooltip: {
+                  text: '直接打开 drawer，再从 drawer 内打开权限 modal',
+                  maxWidth: 240,
+                },
+              },
+              events: {
+                onclick: `
+                  const result = await ctx.openPage({
+                    page: 'user-profile',
+                    params: {
+                      tenant: state.tenant,
+                      username: state.username,
+                    },
+                    mode: 'drawer',
+                    overlay: {
+                      title: '用户资料',
+                      width: 720,
+                      position: 'right',
+                    },
+                  })
+
+                  if (result.action === 'confirm') {
+                    ctx.message.success('资料 Drawer 已确认')
+                  }
+                `,
+              },
+            },
           ],
         },
         {

@@ -6,6 +6,7 @@ import { markRaw, useTemplateRef } from 'vue'
 import { useResizablePanels } from '../composables/useResizablePanels'
 import { useSchemaEditor } from '../composables/useSchemaEditor'
 import { testSchema, testState } from '../schema'
+import { resolvePlaygroundPage } from '../schema/pages'
 import MonacoEditor from './monaco-editor'
 
 defineProps<{
@@ -15,6 +16,7 @@ defineProps<{
 const message = useMessage()
 const ctx = markRaw({
   message,
+  resolvePage: resolvePlaygroundPage,
   theme: 'playground',
 })
 
