@@ -1,13 +1,14 @@
 {
   "name": "@openpage/overlay",
   "type": "module",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "exports": {
     ".": {
       "types": "./dist/index.d.mts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.cjs"
-    }
+    },
+    "./style.css": "./dist/style.css"
   },
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
