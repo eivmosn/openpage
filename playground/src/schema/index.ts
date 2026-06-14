@@ -59,8 +59,14 @@ export const testSchema: PageSchema = {
               },
               events: {
                 onclick: `
-                  console.log('保存数据：', { username, phone, email, channels, tags })
-                  message.info('已保存当前填写内容')
+                  console.log('保存数据：', {
+                    username: state.username,
+                    phone: state.phone,
+                    email: state.email,
+                    channels: state.channels,
+                    tags: state.tags,
+                  })
+                  ctx.message.info('已保存当前填写内容')
                 `,
               },
             },
@@ -119,49 +125,89 @@ export const testSchema: PageSchema = {
           },
           children: [
             {
-              id: 'reset-form',
+              id: 'reset-validation',
               type: 'button',
               label: '重置',
               props: {
                 tooltip: {
-                  text: '清空当前页面状态',
+                  text: '清空当前表单内容',
                   maxWidth: 240,
                 },
                 type: 'warning',
               },
               events: {
                 onclick: `
-                  await resetForm()
-                  username = ''
-                  phone = ''
-                  email = ''
-                  birthday = ''
-                  loginAt = ''
-                  time = null
-                  description = ''
-                  channels = []
-                  tags = []
-                  agreement = false
-                  admin = false
-                  message.warning('表单已重置')
+                  await ctx.reset()
+                  state.username = ''
+                  state.phone = ''
+                  state.email = ''
+                  state.birthday = ''
+                  state.loginAt = ''
+                  state.time = null
+                  state.description = ''
+                  state.channels = []
+                  state.tags = []
+                  state.agreement = false
+                  state.admin = false
+                  ctx.message.warning('表单已重置')
                 `,
               },
             },
             {
-              id: 'submit-form',
+              id: 'validate-form',
               type: 'button',
-              label: '提交',
+              label: '校验',
               props: {
                 type: 'primary',
               },
               events: {
                 onclick: `
-                  const valid = await submitForm()
+                  const valid = await ctx.validate()
                   if (!valid) {
                     return
                   }
-                  console.log('提交数据：', { username, phone, email, channels, tags })
-                  message.success('提交成功')
+                  console.log('提交数据：', {
+                    username: state.username,
+                    phone: state.phone,
+                    email: state.email,
+                    channels: state.channels,
+                    tags: state.tags,
+                  })
+                  ctx.message.success('校验通过')
+                `,
+              },
+            },
+            {
+              id: 'validate-tenant',
+              type: 'button',
+              label: '校验租户',
+              props: {
+                type: 'default',
+              },
+              events: {
+                onclick: `
+                  const valid = await ctx.validate('tenant')
+
+                  if (valid) {
+                    ctx.message.success('租户校验通过')
+                  }
+                `,
+              },
+            },
+            {
+              id: 'validate-fields',
+              type: 'button',
+              label: '校验租户和金额',
+              props: {
+                type: 'default',
+              },
+              events: {
+                onclick: `
+                  const valid = await ctx.validate(['tenant', 'total'])
+
+                  if (valid) {
+                    ctx.message.success('租户和金额校验通过')
+                  }
                 `,
               },
             },

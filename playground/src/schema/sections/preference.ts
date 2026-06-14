@@ -17,7 +17,6 @@ export const preferenceSection: ComponentSchema = {
     {
       id: 'preference-banner',
       type: 'div',
-      label: '02 权限与偏好设置',
       props: {
         style: {
           background: 'linear-gradient(90deg, #16a34a, #4ade80)',
@@ -28,6 +27,13 @@ export const preferenceSection: ComponentSchema = {
           width: '100%',
         },
       },
+      children: [
+        {
+          id: 'preference-banner-title',
+          type: 'text',
+          label: '02 权限与偏好设置',
+        },
+      ],
     },
     {
       id: 'preference-grid',

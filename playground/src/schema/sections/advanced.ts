@@ -16,7 +16,6 @@ export const advancedSection: ComponentSchema = {
     {
       id: 'advanced-banner',
       type: 'div',
-      label: '03 时间、指标与展示',
       props: {
         style: {
           background: 'linear-gradient(90deg, #ea580c, #fb923c)',
@@ -27,6 +26,13 @@ export const advancedSection: ComponentSchema = {
           width: '100%',
         },
       },
+      children: [
+        {
+          id: 'advanced-banner-title',
+          type: 'text',
+          label: '03 时间、指标与展示',
+        },
+      ],
     },
     {
       id: 'advanced-grid',
@@ -74,7 +80,7 @@ export const advancedSection: ComponentSchema = {
             placeholder: '请选择预约时间',
             valueFormat: 'yyyy-MM-dd HH:mm:ss',
           },
-          required: '{{ birthday !== ""}}',
+          required: '{{ state.birthday !== ""}}',
         },
         {
           id: 'time',
@@ -127,7 +133,7 @@ export const advancedSection: ComponentSchema = {
           label: '资料二维码',
           props: {
             size: 110,
-            value: '{{ qrCode }}',
+            value: '{{ state.qrCode }}',
           },
         },
         {

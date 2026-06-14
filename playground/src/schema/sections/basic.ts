@@ -17,7 +17,6 @@ export const basicSection: ComponentSchema = {
     {
       id: 'basic-banner',
       type: 'div',
-      label: '01 基础身份信息',
       props: {
         style: {
           background: 'linear-gradient(90deg, #2563eb, #60a5fa)',
@@ -28,6 +27,13 @@ export const basicSection: ComponentSchema = {
           width: '100%',
         },
       },
+      children: [
+        {
+          id: 'basic-banner-title',
+          type: 'text',
+          label: '01 基础身份信息',
+        },
+      ],
     },
     {
       id: 'basic-grid',
@@ -42,23 +48,71 @@ export const basicSection: ComponentSchema = {
       },
       children: [
         {
-          id: 'tenant',
-          type: 'autoComplete',
-          name: 'tenant',
-          label: '租户',
+          type: 'div',
+          id: 'group-input',
           props: {
-            options: ['OpenPage Cloud', 'OpenPage Studio', 'OpenPage Enterprise'],
-            placeholder: '请输入或选择租户',
-            message: '租户必填: 支持自定义必填文字 message 属性',
+            style: {
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+            },
           },
-          required: true,
+          children: [
+            {
+              id: 'tenant',
+              type: 'autoComplete',
+              name: 'tenant',
+              label: '租户',
+              props: {
+                options: ['OpenPage Cloud', 'OpenPage Studio', 'OpenPage Enterprise'],
+                placeholder: '请输入或选择租户',
+                message: '租户必填: 支持自定义必填文字 message 属性',
+                style: {
+                  flex: 1,
+                  width: '100%',
+                },
+              },
+              required: true,
+            },
+            {
+              id: 'open-login-page',
+              type: 'button',
+              label: '关联页面',
+              props: {
+                tooltip: {
+                  text: '通过 core 内置 openPage 打开子页面',
+                  maxWidth: 220,
+                },
+              },
+              events: {
+                onclick: `
+                  const result = await ctx.openPage({
+                    page: 'login',
+                    params: {
+                      tenant: state.tenant,
+                    },
+                    mode: 'modal',
+                    overlay: {
+                      title: '登录表单',
+                      width: 640,
+                      height: 520,
+                    },
+                  })
+
+                  if (result.action === 'confirm') {
+                    ctx.message.success('子页面确认完成')
+                  }
+                `,
+              },
+            },
+          ],
         },
         {
           id: 'total',
           type: 'inputNumber',
           name: 'total',
           label: '总金额',
-          computedValue: '{{ sum(a, b) }}',
+          computedValue: '{{ ctx.sum(state.a, state.b) }}',
           props: {
             placeholder: '自动计算 A收款 + B收款',
           },
