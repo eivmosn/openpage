@@ -25,6 +25,7 @@
     "vue": "^3.5.35"
   },
   "dependencies": {
+    "@openpage/overlay": "workspace:*",
     "@openpage/script-runner": "workspace:*"
   },
   "devDependencies": {

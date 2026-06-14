@@ -1,6 +1,7 @@
 export interface PageSchema {
   id: string
   title?: string
+  initPage?: string
   children: ComponentSchema[]
 }
 

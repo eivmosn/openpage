@@ -7,6 +7,6 @@ export default defineConfig({
   clean: true,
   sourcemap: false,
   deps: {
-    neverBundle: ['@openpage/script-runner', 'vue'],
+    neverBundle: ['@openpage/overlay', '@openpage/script-runner', 'vue'],
   },
 })

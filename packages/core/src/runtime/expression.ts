@@ -1,14 +1,9 @@
 import type { RuntimeContext } from '../types/runtime'
-import type { ValueRuntimeHelpers } from './helpers'
+import { readonly } from 'vue'
 import { getCachedValue } from '../utils/cache'
 import { setByPath } from '../utils/path'
-import { valueRuntimeHelpers } from './helpers'
 
-type ExpressionRunner = (
-  state: Record<string, unknown>,
-  helpers: ValueRuntimeHelpers,
-  scope: Record<string, unknown>,
-) => unknown
+type ExpressionRunner = (scope: Record<string, unknown>) => unknown
 
 export type ExpressionValueResolver = (
   context: RuntimeContext,
@@ -111,7 +106,7 @@ export function compileExpressionValue(value: unknown): ExpressionValueResolver 
 
     if (expression) {
       const runExpression = getCachedValue(expressionCache, expression, () => compileExpression(expression))
-      return (context, scope = {}) => runExpression(createStateScope(context.state), valueRuntimeHelpers, scope)
+      return (context, scope = {}) => runExpression(createExpressionScope(context, scope))
     }
   }
 
@@ -200,14 +195,28 @@ function evaluateExpression(
   }
 
   const runExpression = getCachedValue(expressionCache, expression, () => compileExpression(expression))
-  return runExpression(createStateScope(context.state), valueRuntimeHelpers, scope)
+  return runExpression(createExpressionScope(context, scope))
+}
+
+/**
+ * 创建表达式运行时作用域。
+ *
+ * @param context 当前渲染器运行时上下文。
+ * @param scope 当前表达式的局部变量。
+ * @returns 返回表达式可访问的作用域对象。
+ */
+function createExpressionScope(context: RuntimeContext, scope: Record<string, unknown>): Record<string, unknown> {
+  return {
+    ...scope,
+    ctx: readonly(context.ctx) as Readonly<RuntimeContext['ctx']>,
+    state: createStateScope(context.state),
+  }
 }
 
 /**
  * 创建表达式专用 State 作用域。
  *
- * 低代码表达式允许直接写 `a + b`，字段初始化前缺失变量应解析为 undefined，
- * 但不能遮蔽 Math、Date 等全局对象，也不能遮蔽函数入参 state/helpers/scope。
+ * 低代码表达式通过 `state.xxx` 读取当前页面数据，字段初始化前缺失变量应解析为 undefined。
  *
  * @param state 当前运行时状态对象。
  * @returns 返回带缺失变量兜底能力的 State 代理。
@@ -261,10 +270,8 @@ function compileExpression(expression: string): ExpressionRunner {
   try {
     // eslint-disable-next-line no-new-func
     const runExpression = new Function(
-      'state',
-      'helpers',
       'scope',
-      `with (state) { with (helpers) { with (scope) { return (${expression}) } } }`,
+      `with (scope) { return (${expression}) }`,
     ) as ExpressionRunner
 
     return createSafeExpressionRunner(expression, runExpression)
@@ -283,9 +290,9 @@ function compileExpression(expression: string): ExpressionRunner {
  * @returns 返回不会向外抛错的表达式执行器。
  */
 function createSafeExpressionRunner(expression: string, runExpression: ExpressionRunner): ExpressionRunner {
-  return (state, helpers, scope) => {
+  return (scope) => {
     try {
-      return runExpression(state, helpers, scope)
+      return runExpression(scope)
     }
     catch (error) {
       warnExpressionError(expression, 'runtime', error)

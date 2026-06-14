@@ -18,6 +18,8 @@ function createRuntimeContext(state: Record<string, unknown>): RuntimeContext {
       interactionCss: '',
     },
     componentPatches: {},
+    ctx: {},
+    params: {},
     services: {
       message: {
         error: vi.fn(),
@@ -38,8 +40,8 @@ describe('runActions', () => {
     })
 
     await runActions(`
-      form.count += $event.step
-      form.submitted = event.name
+      state.form.count += $event.step
+      state.form.submitted = $event.name
     `, context, { name: 'main-submit', step: 2 })
 
     expect(context.state.form).toEqual({
@@ -58,7 +60,7 @@ describe('runActions', () => {
     })
 
     await expect(runActions(`
-      form.count = 9
+      state.form.count = 9
       throw new Error('boom')
     `, context)).resolves.toBeUndefined()
 
@@ -69,23 +71,24 @@ describe('runActions', () => {
     expect(context.services.message?.error).toHaveBeenCalledWith('OpenPage script runtime error: boom')
   })
 
-  it('shows validation message from submitForm result', async () => {
+  it('uses ctx.validate for form validation', async () => {
     const context = createRuntimeContext({
       submitted: false,
     })
 
     context.services.form = {
       reset: () => true,
-      submit: () => ({
-        message: '请填写用户名',
-        valid: false,
-      }),
+      validate: () => false,
+    }
+    context.ctx.validate = async () => {
+      context.services.message?.error?.('请填写用户名')
+      return false
     }
 
     await runActions(`
-      const valid = await submitForm()
+      const valid = await ctx.validate()
       if (!valid) return
-      submitted = true
+      state.submitted = true
     `, context)
 
     expect(context.state.submitted).toBe(false)

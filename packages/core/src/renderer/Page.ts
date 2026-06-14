@@ -1,18 +1,22 @@
-import type { CSSProperties, PropType } from 'vue'
-import type { PageContext, PagePlatform } from '../types/page'
+import type { CSSProperties, PropType, Component as VueComponent } from 'vue'
+import type { PageContext } from '../types/page'
+import type { RuntimeClosePageService, RuntimeContextValue, RuntimeParentPageContext } from '../types/runtime'
 import type { PageSchema } from '../types/schema'
 import type { OpenPageComponents } from '../types/ui'
-import { computed, defineComponent, h, markRaw, shallowRef, toRaw, watch } from 'vue'
+import { OverlayProvider } from '@openpage/overlay'
+import { computed, defineComponent, getCurrentInstance, h, markRaw, shallowRef, watch } from 'vue'
 import { compileSchema } from '../compiler/compileSchema'
 import { usePageInteractionStyles } from '../interactions/usePageInteractionStyles'
-import { createPageContext, updatePageSchema, updatePageState } from '../runtime/vue/createPageContext'
+import { runPageScript } from '../runtime/actions'
+import { createOpenPageRuntime, provideOpenPageRuntime, useOpenPageRuntime } from '../runtime/page/runtime'
+import { createPageContext, updatePageRuntimeOptions, updatePageSchema } from '../runtime/vue/createPageContext'
 import { useComputedValues } from '../runtime/vue/useComputedValues'
 import { providePageContext } from '../runtime/vue/usePageContext'
-import { formWrapperKey } from '../types/ui'
 import { Component } from './Component'
+import '@openpage/overlay/style.css'
 
 const missingComponentsMessage = 'OpenPage Renderer 渲染失败：未配置 UI 组件映射，请通过 components 属性传入组件表。'
-const missingFormWrapperMessage = '[openpage] 未配置 formWrapper，页面将无法使用组件库表单校验。OpenPage 当前依赖第三方 UI 组件库的 Form 能力进行验证，以避免重复实现校验逻辑；如需校验，请在 components 中提供 formWrapper。'
+const missingFormMessage = '[openpage] 未配置 form 组件，页面将无法使用表单校验能力。'
 const pageRootStyle: CSSProperties = {
   boxSizing: 'border-box',
   height: '100%',
@@ -36,17 +40,29 @@ const PageProvider = defineComponent({
   },
 })
 
+const RuntimeProvider = defineComponent({
+  name: 'OpenPageRuntimeProvider',
+  props: {
+    runtime: {
+      type: Object as PropType<ReturnType<typeof createOpenPageRuntime>>,
+      required: true,
+    },
+  },
+  setup(props, { slots }) {
+    provideOpenPageRuntime(props.runtime)
+
+    return () => slots.default?.()
+  },
+})
+
 export const Page = defineComponent({
   name: 'OpenPage',
-  emits: {
-    'update:state': (_state: Record<string, unknown>) => true,
-  },
   props: {
     schema: {
       type: Object as PropType<PageSchema>,
       required: true,
     },
-    state: {
+    initState: {
       type: Object as PropType<Record<string, unknown>>,
       default: () => ({}),
     },
@@ -54,29 +70,41 @@ export const Page = defineComponent({
       type: Object as PropType<OpenPageComponents>,
       default: undefined,
     },
-    platform: {
-      type: Object as PropType<PagePlatform>,
+    ctx: {
+      type: Object as PropType<RuntimeContextValue>,
       default: () => ({}),
     },
+    params: {
+      type: Object as PropType<Record<string, unknown>>,
+      default: () => ({}),
+    },
+    parent: {
+      type: Object as PropType<RuntimeParentPageContext>,
+      default: undefined,
+    },
+    closePage: {
+      type: Function as PropType<RuntimeClosePageService>,
+      default: undefined,
+    },
   },
-  setup(props, { emit }) {
+  setup(props) {
+    const parentRuntime = useOpenPageRuntime()
+    const pageComponent = markRaw(getCurrentInstance()?.type as VueComponent)
+    const runtime = parentRuntime ?? createOpenPageRuntime({
+      components: props.components,
+      pageComponent,
+    })
     const schema = computed(() => props.schema)
     const compiled = computed(() => markRaw(compileSchema(schema.value)))
     let cachedRootChildren: string[] | undefined
     let cachedRootChildrenVNodes: unknown
-    let hasWarnedMissingFormWrapper = false
+    let hasWarnedMissingForm = false
+    let hasInitializedState = false
 
     usePageInteractionStyles(compiled)
 
     const context = shallowRef<PageContext>()
     useComputedValues(context)
-
-    /**
-     * 将当前运行时状态同步给外部受控状态。
-     */
-    function notifyStateChange(): void {
-      emit('update:state', toRaw(context.value?.state || props.state))
-    }
 
     watch(() => props.components, (components) => {
       if (!components) {
@@ -85,12 +113,18 @@ export const Page = defineComponent({
       }
 
       if (!context.value) {
-        context.value = createPageContext(compiled.value, props.state, components, props.platform, notifyStateChange)
+        context.value = createPageContext(
+          compiled.value,
+          createInitialState(),
+          markRaw(components),
+          createRuntimeOptions(),
+        )
+        void runInitPage()
         return
       }
 
-      context.value.components = components
-      context.value.services.message = props.platform.message
+      context.value.components = markRaw(components)
+      updatePageRuntimeOptions(context.value, createRuntimeOptions())
     }, {
       immediate: true,
     })
@@ -101,19 +135,23 @@ export const Page = defineComponent({
 
       if (context.value) {
         updatePageSchema(context.value, latestCompiled)
+        void runInitPage()
       }
     })
 
-    watch(() => props.state, (state) => {
+    watch(() => [props.ctx, props.params, props.parent, props.closePage] as const, () => {
       if (context.value) {
-        updatePageState(context.value, state)
+        updatePageRuntimeOptions(context.value, createRuntimeOptions())
       }
     })
 
-    watch(() => props.platform, (platform) => {
-      if (context.value) {
-        context.value.services.message = platform.message
-      }
+    watch(() => props.components, () => {
+      runtime.update({
+        components: props.components,
+        pageComponent,
+      })
+    }, {
+      immediate: true,
     })
 
     return () => {
@@ -126,11 +164,21 @@ export const Page = defineComponent({
         })
       }
 
-      return renderPageRoot(
+      const pageNode = renderPageRoot(
         h(PageProvider, { context: runtimeContext }, {
           default: () => renderPageContent(runtimeContext),
         }),
       )
+
+      if (parentRuntime) {
+        return pageNode
+      }
+
+      return h(RuntimeProvider, { runtime }, {
+        default: () => h(OverlayProvider, null, {
+          default: () => pageNode,
+        }),
+      })
     }
 
     /**
@@ -149,35 +197,35 @@ export const Page = defineComponent({
     }
 
     /**
-     * 渲染页面内容，并允许 UI 适配层挂载表单包装器。
+     * 渲染页面内容，并挂载官方表单组件。
      *
      * @param runtimeContext 当前页面运行时上下文。
      * @returns 返回页面内容 VNode。
      */
     function renderPageContent(runtimeContext: PageContext): unknown {
       const children = renderRootChildren(runtimeContext.compiled.children)
-      const formWrapper = runtimeContext.components[formWrapperKey]
+      const Form = runtimeContext.components.form
 
-      if (!formWrapper) {
-        warnMissingFormWrapper()
+      if (!Form) {
+        warnMissingForm()
         return children
       }
 
-      return h(formWrapper, { context: runtimeContext }, {
+      return h(Form, { context: runtimeContext }, {
         default: () => children,
       })
     }
 
     /**
-     * 提示调用方补齐表单包装器，否则无法复用第三方组件库校验能力。
+     * 提示调用方补齐官方表单组件。
      */
-    function warnMissingFormWrapper(): void {
-      if (hasWarnedMissingFormWrapper) {
+    function warnMissingForm(): void {
+      if (hasWarnedMissingForm) {
         return
       }
 
-      hasWarnedMissingFormWrapper = true
-      console.warn(missingFormWrapperMessage)
+      hasWarnedMissingForm = true
+      console.warn(missingFormMessage)
     }
 
     /**
@@ -200,6 +248,46 @@ export const Page = defineComponent({
       )
 
       return cachedRootChildrenVNodes
+    }
+
+    /**
+     * 创建页面初始状态，保证 initState 只在页面实例初始化时读取一次。
+     *
+     * @returns 返回当前页面的初始状态副本。
+     */
+    function createInitialState(): Record<string, unknown> {
+      if (hasInitializedState) {
+        return {}
+      }
+
+      hasInitializedState = true
+      return { ...props.initState }
+    }
+
+    /**
+     * 创建当前页面运行时选项。
+     *
+     * @returns 返回当前页面运行时选项。
+     */
+    function createRuntimeOptions(): Parameters<typeof createPageContext>[3] {
+      return {
+        closePage: props.closePage,
+        ctx: props.ctx,
+        openPage: runtime.openPage,
+        params: props.params,
+        parent: props.parent,
+      }
+    }
+
+    /**
+     * 执行当前页面的初始化生命周期脚本。
+     */
+    async function runInitPage(): Promise<void> {
+      if (!context.value) {
+        return
+      }
+
+      await runPageScript(schema.value.initPage, context.value)
     }
   },
 })

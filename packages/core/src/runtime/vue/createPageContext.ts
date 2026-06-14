@@ -1,9 +1,20 @@
 import type { CompiledPage } from '../../types/compiled'
-import type { PageContext, PagePlatform } from '../../types/page'
-import type { RuntimeServices } from '../../types/runtime'
+import type { PageContext } from '../../types/page'
+import type { RuntimeClosePageService, RuntimeComponentPatch, RuntimeContextValue, RuntimeOpenPageOptions, RuntimeOpenPageService, RuntimeParentPageContext, RuntimeServices, RuntimeValidateTarget } from '../../types/runtime'
 import type { OpenPageComponents } from '../../types/ui'
-import { reactive, shallowReactive } from 'vue'
+import { markRaw, reactive, readonly, shallowReactive } from 'vue'
+import { getByPath, setByPath } from '../../utils/path'
+import { getComponentById, getComponentByName, updateComponentById, updateComponentByName } from '../components'
 import { applyComponentDefaultValues } from '../defaults'
+import { valueRuntimeHelpers } from '../helpers'
+
+export interface CreatePageContextOptions {
+  closePage?: RuntimeClosePageService
+  ctx: RuntimeContextValue
+  openPage?: RuntimeOpenPageService
+  params?: Record<string, unknown>
+  parent?: RuntimeParentPageContext
+}
 
 /**
  * 创建渲染器运行时上下文。
@@ -11,32 +22,161 @@ import { applyComponentDefaultValues } from '../defaults'
  * @param compiled 当前编译后的页面结构。
  * @param state 当前页面初始状态。
  * @param components 当前 UI 组件映射。
- * @param platform 当前平台能力。
- * @param notifyStateChange 状态变更通知函数。
+ * @param options 页面运行时选项。
  * @returns 返回可响应更新的渲染器运行时上下文。
  */
 export function createPageContext(
   compiled: CompiledPage,
   state: Record<string, unknown>,
   components: OpenPageComponents,
-  platform: PagePlatform,
-  notifyStateChange: () => void,
+  options: CreatePageContextOptions,
 ): PageContext {
+  const runtimeCtx = shallowReactive<RuntimeContextValue>({})
   const services = shallowReactive<RuntimeServices>({
-    message: platform.message,
-    notifyStateChange,
+    closePage: options.closePage,
+    message: runtimeCtx.message,
+    notifyStateChange: () => {},
+    openPage: options.openPage,
+    parent: options.parent,
   })
   const context = shallowReactive<PageContext>({
     compiled,
+    ctx: runtimeCtx,
+    params: options.params || {},
     state: createReactiveState(state),
-    components,
+    components: markRaw(components),
     services,
     componentPatches: reactive({}),
   })
 
+  updatePageRuntimeOptions(context, options)
   applyComponentDefaultValues(context)
+  services.notifyStateChange = () => {}
 
   return context
+}
+
+/**
+ * 更新页面运行时选项，并重新生成当前页面可用的 ctx 方法。
+ *
+ * @param context 需要更新的渲染器运行时上下文。
+ * @param options 最新页面运行时选项。
+ */
+export function updatePageRuntimeOptions(
+  context: PageContext,
+  options: CreatePageContextOptions,
+): void {
+  context.params = options.params || {}
+  context.services.closePage = options.closePage
+  context.services.openPage = options.openPage
+  context.services.parent = options.parent
+
+  Object.keys(context.ctx).forEach((key) => {
+    delete context.ctx[key]
+  })
+
+  Object.assign(context.ctx, options.ctx, {
+    ...valueRuntimeHelpers,
+    closePage: (result?: unknown) => {
+      context.services.closePage?.(result)
+    },
+    getComponentById: (id: string) => getComponentById(context, id),
+    getComponentByName: (name: string) => getComponentByName(context, name),
+    getState: (path: string) => getByPath(context.state, path),
+    message: options.ctx.message,
+    openPage: async (openOptions: RuntimeOpenPageOptions) => {
+      if (!context.services.openPage) {
+        context.services.message?.warning?.('当前页面未配置打开页面能力')
+        return { action: 'close' }
+      }
+
+      return await context.services.openPage(openOptions, context)
+    },
+    parentParams: readonly(context.params) as Readonly<Record<string, unknown>>,
+    reset: async () => await reset(context),
+    setParentState: (pathOrPatch: string | Record<string, unknown>, value?: unknown) => {
+      const parent = context.services.parent
+
+      if (!parent) {
+        context.services.message?.warning?.('当前页面没有可写入的父页面状态')
+        return
+      }
+
+      applySetState(parent.state, parent.setState, pathOrPatch, value)
+    },
+    updateComponentById: (id: string, patch: RuntimeComponentPatch) => updateComponentById(context, id, patch),
+    updateComponentByName: (name: string, patch: RuntimeComponentPatch) => updateComponentByName(context, name, patch),
+    validate: async (target?: RuntimeValidateTarget) => await validate(context, target),
+  })
+
+  context.services.message = context.ctx.message
+}
+
+/**
+ * 执行当前表单校验。
+ *
+ * @param context 当前渲染器运行时上下文。
+ * @param target 需要校验的组件标识或标识数组，不传时校验整个表单。
+ * @returns 返回表单是否校验通过。
+ */
+async function validate(context: PageContext, target?: RuntimeValidateTarget): Promise<boolean> {
+  const validateForm = context.services.form?.validate
+
+  if (!validateForm) {
+    context.services.message?.warning?.('当前页面未配置表单校验能力')
+    return false
+  }
+
+  return await validateForm(target)
+}
+
+/**
+ * 重置当前表单校验状态。
+ *
+ * @param context 当前渲染器运行时上下文。
+ * @returns 返回表单校验状态是否恢复完成。
+ */
+async function reset(context: PageContext): Promise<boolean> {
+  const resetValidation = context.services.form?.reset
+
+  if (!resetValidation) {
+    context.services.message?.warning?.('当前页面未配置表单校验能力')
+    return false
+  }
+
+  return await resetValidation()
+}
+
+/**
+ * 执行状态写入，支持路径写入和对象浅合并。
+ *
+ * @param state 需要写入的状态对象。
+ * @param parentSetState 父页面受控写入方法。
+ * @param pathOrPatch 状态路径或状态补丁对象。
+ * @param value 路径写入时对应的值。
+ */
+function applySetState(
+  state: Record<string, unknown>,
+  parentSetState: RuntimeParentPageContext['setState'] | undefined,
+  pathOrPatch: string | Record<string, unknown>,
+  value?: unknown,
+): void {
+  if (parentSetState) {
+    if (typeof pathOrPatch === 'string') {
+      parentSetState(pathOrPatch, value)
+      return
+    }
+
+    parentSetState(pathOrPatch)
+    return
+  }
+
+  if (typeof pathOrPatch === 'string') {
+    setByPath(state, pathOrPatch, value)
+    return
+  }
+
+  Object.assign(state, pathOrPatch)
 }
 
 /**
@@ -52,17 +192,6 @@ export function updatePageSchema(
   context.compiled = compiled
   context.componentPatches = reactive({})
 
-  applyComponentDefaultValues(context)
-}
-
-/**
- * 使用最新外部状态更新渲染器运行时状态。
- *
- * @param context 需要更新的渲染器运行时上下文。
- * @param state 最新外部状态。
- */
-export function updatePageState(context: PageContext, state: Record<string, unknown>): void {
-  context.state = createReactiveState(state)
   applyComponentDefaultValues(context)
 }
 

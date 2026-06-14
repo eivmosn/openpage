@@ -7,13 +7,24 @@ export type { InteractionPreset, InteractionStyle, InteractionStyleObject, Inter
 export { Page } from './renderer/Page'
 export { getModelKey, getModelValue } from './runtime/model'
 export type { CompiledComponent, CompiledPage } from './types/compiled'
-export type { PageContext, PageInstance, PagePlatform } from './types/page'
+export type { PageContext, PageInstance } from './types/page'
 export type {
+  RuntimeClosePageService,
   RuntimeComponentPatch,
   RuntimeContext,
+  RuntimeContextValue,
+  RuntimeFormService,
   RuntimeMessageService,
+  RuntimeOpenPageOptions,
+  RuntimeOpenPageOverlayOptions,
+  RuntimeOpenPageResult,
+  RuntimeOpenPageService,
+  RuntimePageResolver,
+  RuntimeParentPageContext,
+  RuntimeResolvedPage,
   RuntimeServices,
+  RuntimeValidateTarget,
 } from './types/runtime'
 export type { ComponentSchema, EventSchema, PageSchema } from './types/schema'
-export { formWrapperKey } from './types/ui'
-export type { OpenPageComponents, UiComponentProps, UiFormWrapperProps } from './types/ui'
+export type { OpenPageComponents, UiComponentProps, UiFormProps } from './types/ui'
+export { getByPath, setByPath } from './utils/path'

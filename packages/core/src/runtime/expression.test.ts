@@ -1,6 +1,7 @@
 import type { RuntimeContext } from '../types/runtime'
 import { describe, expect, it, vi } from 'vitest'
 import { compileExpressionValue, resolveExpressionValue } from './expression'
+import { valueRuntimeHelpers } from './helpers'
 
 /**
  * 创建表达式测试所需的最小运行时上下文。
@@ -18,6 +19,10 @@ function createRuntimeContext(state: Record<string, unknown>): RuntimeContext {
       interactionCss: '',
     },
     componentPatches: {},
+    ctx: {
+      ...valueRuntimeHelpers,
+    },
+    params: {},
     services: {
       notifyStateChange: vi.fn(),
     },
@@ -32,8 +37,8 @@ describe('expression runtime', () => {
     })
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
-    expect(resolveExpressionValue('{{ a + }}', context)).toBeUndefined()
-    expect(resolveExpressionValue('{{ a + }}', context)).toBeUndefined()
+    expect(resolveExpressionValue('{{ state.a + }}', context)).toBeUndefined()
+    expect(resolveExpressionValue('{{ state.a + }}', context)).toBeUndefined()
     expect(warn).toHaveBeenCalledTimes(1)
 
     warn.mockRestore()
@@ -45,8 +50,8 @@ describe('expression runtime', () => {
     })
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
-    expect(resolveExpressionValue('{{ user.name }}', context)).toBeUndefined()
-    expect(resolveExpressionValue('{{ user.name }}', context)).toBeUndefined()
+    expect(resolveExpressionValue('{{ state.user.name }}', context)).toBeUndefined()
+    expect(resolveExpressionValue('{{ state.user.name }}', context)).toBeUndefined()
     expect(warn).toHaveBeenCalledTimes(1)
 
     warn.mockRestore()
@@ -55,7 +60,7 @@ describe('expression runtime', () => {
   it('resolves missing state identifiers as undefined', () => {
     const context = createRuntimeContext({})
 
-    expect(resolveExpressionValue('{{ sum(a, b) }}', context)).toBeUndefined()
+    expect(resolveExpressionValue('{{ ctx.sum(state.a, state.b) }}', context)).toBeUndefined()
   })
 
   it('keeps helpers, scope and global objects available', () => {
@@ -63,7 +68,7 @@ describe('expression runtime', () => {
       a: 2,
     })
 
-    expect(resolveExpressionValue('{{ sum(a, $event.step, Math.max(1, 3)) }}', context, {
+    expect(resolveExpressionValue('{{ ctx.sum(state.a, $event.step, Math.max(1, 3)) }}', context, {
       $event: {
         step: 4,
       },
@@ -75,7 +80,7 @@ describe('expression runtime', () => {
       price: 12,
     })
     const resolveValue = compileExpressionValue({
-      total: '{{ sum(price, discount) }}',
+      total: '{{ ctx.sum(state.price, state.discount) }}',
     })
 
     expect(resolveValue(context)).toEqual({

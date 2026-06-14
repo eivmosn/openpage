@@ -110,6 +110,9 @@ importers:
 
   packages/core:
     dependencies:
+      '@openpage/overlay':
+        specifier: workspace:*
+        version: link:../overlay
       '@openpage/script-runner':
         specifier: workspace:*
         version: link:../script-runner

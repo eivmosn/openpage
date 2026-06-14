@@ -2,8 +2,6 @@ import type { Component } from 'vue'
 import type { CompiledComponent } from './compiled'
 import type { RuntimeContext } from './runtime'
 
-export const formWrapperKey = 'formWrapper'
-
 export type OpenPageComponents = Record<string, Component>
 
 export interface UiComponentProps {
@@ -15,6 +13,6 @@ export interface UiComponentProps {
   updateModelValue: (value: unknown) => void
 }
 
-export interface UiFormWrapperProps {
+export interface UiFormProps {
   context: RuntimeContext
 }

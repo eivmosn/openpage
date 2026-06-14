@@ -54,13 +54,18 @@ describe('compileSchema', () => {
         id: 'hero',
         type: 'section',
         props: {},
-        description: '{{ user.name + " / " + count }}',
+        description: '{{ state.user.name + " / " + state.count }}',
       }],
     }, {
       dynamicFieldKeys: ['description'],
     })
     const component = compiled.components.get('hero')
     const context = {
+      ctx: {},
+      params: {},
+      services: {
+        notifyStateChange: () => {},
+      },
       state: {
         count: 7,
         user: {
@@ -70,7 +75,7 @@ describe('compileSchema', () => {
     } as unknown as RuntimeContext
 
     expect(component?.dynamic.fields).toEqual(['description'])
-    expect(component?.dynamicValues.description).toBe('{{ user.name + " / " + count }}')
+    expect(component?.dynamicValues.description).toBe('{{ state.user.name + " / " + state.count }}')
     expect(component?.dynamicResolvers.description?.(context)).toBe('OpenPage / 7')
   })
 })
