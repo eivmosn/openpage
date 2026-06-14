@@ -9,7 +9,10 @@ import { valueRuntimeHelpers } from './helpers'
  * @param state 当前测试状态对象。
  * @returns 返回表达式可执行的运行时上下文。
  */
-function createRuntimeContext(state: Record<string, unknown>): RuntimeContext {
+function createRuntimeContext(
+  state: Record<string, unknown>,
+  params: Record<string, unknown> = {},
+): RuntimeContext {
   return {
     compiled: {
       id: 'test-page',
@@ -25,7 +28,7 @@ function createRuntimeContext(state: Record<string, unknown>): RuntimeContext {
     ctx: {
       ...valueRuntimeHelpers,
     },
-    params: {},
+    params,
     readonlyCtx: {
       ...valueRuntimeHelpers,
     },
@@ -92,5 +95,28 @@ describe('expression runtime', () => {
     expect(resolveValue(context)).toEqual({
       total: 12,
     })
+  })
+
+  it('resolves params in template expressions', () => {
+    const context = createRuntimeContext({}, {
+      tenant: 'OpenPage Cloud',
+    })
+
+    expect(resolveExpressionValue('{{ params.tenant }}', context)).toBe('OpenPage Cloud')
+  })
+
+  it('uses latest params with cached compiled expressions', () => {
+    const context = createRuntimeContext({}, {
+      tenant: 'OpenPage Cloud',
+    })
+    const resolveValue = compileExpressionValue('{{ params.tenant }}')
+
+    expect(resolveValue(context)).toBe('OpenPage Cloud')
+
+    context.params = {
+      tenant: 'OpenPage Studio',
+    }
+
+    expect(resolveValue(context)).toBe('OpenPage Studio')
   })
 })

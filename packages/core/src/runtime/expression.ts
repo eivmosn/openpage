@@ -214,6 +214,7 @@ function createExpressionScope(context: RuntimeContext, scope: Record<string, un
   return {
     ...scope,
     ctx: context.readonlyCtx,
+    params: context.params,
     state: createStateScope(context.state),
   }
 }
@@ -233,6 +234,9 @@ function createBaseExpressionScope(context: RuntimeContext): Record<string, unkn
 
   const baseScope = {
     ctx: context.readonlyCtx,
+    get params() {
+      return context.params
+    },
     state: createStateScope(context.state),
   }
 
@@ -284,7 +288,7 @@ function createStateScope(state: Record<string, unknown>): Record<string, unknow
  * @returns 返回是否为表达式执行器保留标识符。
  */
 function isReservedExpressionIdentifier(key: string): boolean {
-  return key === 'state' || key === 'helpers' || key === 'scope'
+  return key === 'state' || key === 'ctx' || key === 'params' || key === 'helpers' || key === 'scope'
 }
 
 /**

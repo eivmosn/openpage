@@ -93,7 +93,7 @@ export function updatePageRuntimeOptions(
 
       return await context.services.openPage(openOptions, context)
     },
-    parentParams: readonly(context.params) as Readonly<Record<string, unknown>>,
+    parentParams: context.services.parent?.params || {},
     reset: async (target?: RuntimeValidateTarget, resetOptions?: RuntimeValidateOptions) => await reset(context, target, resetOptions),
     setParentState: (pathOrPatch: string | Record<string, unknown>, value?: unknown) => {
       const parent = context.services.parent

@@ -11,6 +11,7 @@ import { setByPath } from '../../utils/path'
 export function createParentPageContext(context: RuntimeContext): RuntimeParentPageContext {
   return {
     pageId: context.compiled.id,
+    params: readonly(context.params) as Readonly<Record<string, unknown>>,
     state: readonly(context.state) as Record<string, unknown>,
     setState: (pathOrPatch, value) => {
       if (typeof pathOrPatch === 'string') {

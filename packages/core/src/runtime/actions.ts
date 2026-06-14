@@ -44,6 +44,7 @@ function runStaticEvent(action: StaticEventActionSchema, context: RuntimeContext
   const scope = {
     $event: payload,
     ctx: context.readonlyCtx,
+    params: context.params,
   }
 
   for (const [path, value] of Object.entries(action.dependency)) {
@@ -66,6 +67,7 @@ async function runScriptEvent(script: string, context: RuntimeContext, payload?:
     scope: {
       $event: payload,
       ctx: context.readonlyCtx,
+      params: context.params,
     },
     formatErrorMessage: ({ phase, message }) => `OpenPage script ${phase} error: ${message}`,
   })

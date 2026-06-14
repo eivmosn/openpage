@@ -74,6 +74,7 @@ export type RuntimeSetStateService = (pathOrPatch: string | Record<string, unkno
 
 export interface RuntimeParentPageContext {
   emit: (eventName: string, payload?: unknown) => Promise<void>
+  params: Readonly<Record<string, unknown>>
   pageId: string
   setState: RuntimeSetStateService
   state: Record<string, unknown>

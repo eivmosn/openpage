@@ -8,7 +8,10 @@ import { runActions } from './actions'
  * @param state 当前测试状态对象。
  * @returns 返回可执行脚本事件的运行时上下文。
  */
-function createRuntimeContext(state: Record<string, unknown>): RuntimeContext {
+function createRuntimeContext(
+  state: Record<string, unknown>,
+  params: Record<string, unknown> = {},
+): RuntimeContext {
   const ctx: RuntimeContext['ctx'] = {}
 
   return {
@@ -24,7 +27,7 @@ function createRuntimeContext(state: Record<string, unknown>): RuntimeContext {
     },
     componentPatches: {},
     ctx,
-    params: {},
+    params,
     readonlyCtx: ctx,
     services: {
       message: {
@@ -99,5 +102,20 @@ describe('runActions', () => {
 
     expect(context.state.submitted).toBe(false)
     expect(context.services.message?.error).toHaveBeenCalledWith('请填写用户名')
+  })
+
+  it('exposes page params to script events', async () => {
+    const context = createRuntimeContext({
+      tenant: '',
+    }, {
+      tenant: 'OpenPage Cloud',
+    })
+
+    await runActions(`
+      state.tenant = params.tenant
+    `, context)
+
+    expect(context.state.tenant).toBe('OpenPage Cloud')
+    expect(context.services.notifyStateChange).toHaveBeenCalledTimes(1)
   })
 })
