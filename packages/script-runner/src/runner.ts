@@ -8,7 +8,7 @@ import { ScriptTransaction } from './transaction'
 /**
  * 执行脚本字符串或已编译脚本。
  *
- * 脚本会在代理作用域中运行，可直接读写 options.state 顶层字段，
+ * 脚本会在代理作用域中运行，可通过 state 读写 options.state，
  * 也可以直接调用 options.helpers 提供的方法。默认情况下，脚本报错
  * 不会向外冒泡，而是返回失败结果并回滚本次写入。
  *

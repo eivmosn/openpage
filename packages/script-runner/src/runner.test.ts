@@ -10,7 +10,7 @@ describe('@openpage/script-runner', () => {
       },
     }
 
-    const result = await runScript('form.count += 1\nform.total = sum(form.count, 2)', {
+    const result = await runScript('state.form.count += 1\nstate.form.total = sum(state.form.count, 2)', {
       state,
       helpers: {
         sum: (left: number, right: number) => left + right,
@@ -36,7 +36,7 @@ describe('@openpage/script-runner', () => {
       },
     }
 
-    const result = await runScript('form.count = 2\nthrow new Error("boom")', {
+    const result = await runScript('state.form.count = 2\nthrow new Error("boom")', {
       state,
     })
 
@@ -51,7 +51,7 @@ describe('@openpage/script-runner', () => {
       form: {},
     }
 
-    const result = await runScript('form.temp = 1\ncreated = true\nthrow new Error("boom")', {
+    const result = await runScript('state.form.temp = 1\nstate.created = true\nthrow new Error("boom")', {
       state,
     })
 
@@ -76,7 +76,7 @@ describe('@openpage/script-runner', () => {
       ],
     }
 
-    const result = await runScript('rows.forEach(row => { row.value += 1 })', {
+    const result = await runScript('state.rows.forEach(row => { row.value += 1 })', {
       state,
     })
 
@@ -166,7 +166,7 @@ describe('@openpage/script-runner', () => {
           total -= 10
       }
 
-      form.result = total +
+      state.form.result = total +
         doubledTotal +
         new Box(5).add(6) +
         await Promise.resolve(4) +
@@ -174,8 +174,8 @@ describe('@openpage/script-runner', () => {
         next() +
         a +
         rest.b
-      form.optional = rest?.b ?? 0
-      form.spreadLength = [...tail, doubledTotal].length
+      state.form.optional = rest?.b ?? 0
+      state.form.spreadLength = [...tail, doubledTotal].length
     `, {
       state,
     })
@@ -189,8 +189,8 @@ describe('@openpage/script-runner', () => {
   it('caches compiled scripts by default', () => {
     clearScriptCache()
 
-    const firstRunner = compileScript('return count + 1')
-    const secondRunner = compileScript('return count + 1')
+    const firstRunner = compileScript('return state.count + 1')
+    const secondRunner = compileScript('return state.count + 1')
 
     expect(firstRunner).toBe(secondRunner)
   })
@@ -233,7 +233,7 @@ describe('@openpage/script-runner', () => {
       clearTimeout(timeoutId)
       clearInterval(intervalId)
 
-      globalsOk = Boolean(
+      state.globalsOk = Boolean(
         Array.isArray(Array.from(new Set([1]))) &&
         new Map([['count', 1]]).get('count') === 1 &&
         Object.keys({ ok: true }).includes('ok') &&
@@ -275,7 +275,7 @@ describe('@openpage/script-runner', () => {
       },
     }
 
-    const result = await runScript('setTimeout(() => { form.count = 2 }, 0)', {
+    const result = await runScript('setTimeout(() => { state.form.count = 2 }, 0)', {
       state,
     })
 

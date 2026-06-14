@@ -13,6 +13,7 @@ const globalClearInterval = globalThis.clearInterval.bind(globalThis) as typeof 
 const globalClearTimeout = globalThis.clearTimeout.bind(globalThis) as typeof globalThis.clearTimeout
 const globalSetInterval = globalThis.setInterval.bind(globalThis) as typeof globalThis.setInterval
 const globalSetTimeout = globalThis.setTimeout.bind(globalThis) as typeof globalThis.setTimeout
+const readonlyScopeKeys = new Set(['$event', 'ctx', 'state'])
 
 const defaultGlobals: Record<string, unknown> = {
   Array,
@@ -56,7 +57,10 @@ const defaultGlobals: Record<string, unknown> = {
  * @returns 返回脚本作用域代理。
  */
 export function createScriptScope(options: CreateScriptScopeOptions): object {
-  const localScope = options.scope || {}
+  const localScope: Record<string, unknown> = {
+    ...options.scope,
+    state: options.stateProxy,
+  }
   const helpers = options.helpers || {}
   const globals = {
     ...defaultGlobals,
@@ -84,10 +88,6 @@ export function createScriptScope(options: CreateScriptScopeOptions): object {
         return createHelperProxy(key, helpers[key], options.transaction)
       }
 
-      if (key in options.state) {
-        return options.stateProxy[key]
-      }
-
       if (Object.hasOwn(globals, key)) {
         return globals[key]
       }
@@ -99,16 +99,32 @@ export function createScriptScope(options: CreateScriptScopeOptions): object {
         return false
       }
 
-      options.stateProxy[key] = value
-      return true
+      if (Object.hasOwn(localScope, key)) {
+        if (readonlyScopeKeys.has(key)) {
+          throw new TypeError(`${key} is readonly`)
+        }
+
+        localScope[key] = value
+        return true
+      }
+
+      throw new ReferenceError(`${key} is not defined`)
     },
     deleteProperty(_target, key) {
       if (typeof key !== 'string') {
         return false
       }
 
-      delete options.stateProxy[key]
-      return true
+      if (Object.hasOwn(localScope, key)) {
+        if (readonlyScopeKeys.has(key)) {
+          throw new TypeError(`${key} is readonly`)
+        }
+
+        delete localScope[key]
+        return true
+      }
+
+      throw new ReferenceError(`${key} is not defined`)
     },
   })
 }

@@ -114,7 +114,7 @@ export interface ScriptRunOptions<
   /**
    * 脚本可读写的状态对象。
    *
-   * 脚本中访问 `form.name`、`rows[0].amount` 这类字段时，最终都来自该对象。
+   * 脚本中访问 `state.form.name`、`state.rows[0].amount` 这类字段时，最终都来自该对象。
    */
   state: TState
 
