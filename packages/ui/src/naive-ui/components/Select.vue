@@ -57,6 +57,7 @@ function resolveSelectedOption(value: unknown): SelectOption | undefined {
     :options="options"
     :placeholder="field.placeholder.value"
     :value="selectedValue"
+    clearable
     @update:value="handleUpdateValue"
   />
 </template>
