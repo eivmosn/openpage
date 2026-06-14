@@ -309,6 +309,81 @@ const ctx = {
 }
 ```
 
+## 弹层页面滚动布局
+
+modal / drawer 里的子页面建议用上下固定、中间自适应的 flex 布局。
+
+中间内容如果要滚动，不要把 `padding` 写在开启 `scrollbar` 的那个 div 上。应该在里面再套一层 div，把 `padding` 写到内层。
+
+推荐写法：
+
+```ts
+const page = {
+  id: 'login-page',
+  children: [
+    {
+      id: 'login-layout',
+      type: 'div',
+      props: {
+        style: {
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100%',
+          minHeight: 0,
+        },
+      },
+      children: [
+        {
+          id: 'login-body',
+          type: 'div',
+          props: {
+            scrollbar: true,
+            style: {
+              flex: '1 1 auto',
+              minHeight: 0,
+              overflow: 'hidden',
+            },
+          },
+          children: [
+            {
+              id: 'login-body-inner',
+              type: 'div',
+              props: {
+                style: {
+                  padding: '18px 20px',
+                },
+              },
+              children: [
+                {
+                  id: 'username',
+                  type: 'input',
+                  name: 'username',
+                  label: '用户名',
+                },
+              ],
+            },
+          ],
+        },
+        {
+          id: 'login-footer',
+          type: 'div',
+          props: {
+            style: {
+              borderTop: '1px solid #e5e7eb',
+              flex: '0 0 auto',
+              padding: '12px 20px',
+            },
+          },
+          children: [],
+        },
+      ],
+    },
+  ],
+}
+```
+
+这样滚动区域高度更稳定，滚动条也不会因为 padding 计算出问题。
+
 ## 子页面修改父页面
 
 子页面可以读取自己的 `params`。

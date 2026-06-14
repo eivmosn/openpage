@@ -239,6 +239,104 @@ const ctx = {
 }
 ```
 
+## 弹层页面滚动布局
+
+openPage 打开的 modal / drawer 页面，建议这样组织：
+
+- 最外层用 flex，方向是 column。
+- header / footer 固定高度。
+- 中间 body 用 `flex: 1` 和 `minHeight: 0`。
+- body 如果开启滚动，不要直接加 padding。
+- body 里面再套一个 inner div，把 padding 写在 inner 上。
+
+推荐写法：
+
+```ts
+const schema: PageSchema = {
+  id: 'child-page',
+  title: '子页面',
+  children: [
+    {
+      id: 'child-layout',
+      type: 'div',
+      props: {
+        style: {
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100%',
+          minHeight: 0,
+        },
+      },
+      children: [
+        {
+          id: 'child-body',
+          type: 'div',
+          props: {
+            scrollbar: true,
+            style: {
+              flex: '1 1 auto',
+              minHeight: 0,
+              overflow: 'hidden',
+            },
+          },
+          children: [
+            {
+              id: 'child-body-inner',
+              type: 'div',
+              props: {
+                style: {
+                  padding: '18px 20px',
+                },
+              },
+              children: [
+                {
+                  id: 'username',
+                  type: 'input',
+                  name: 'username',
+                  label: '用户名',
+                },
+              ],
+            },
+          ],
+        },
+        {
+          id: 'child-footer',
+          type: 'div',
+          props: {
+            style: {
+              borderTop: '1px solid #e5e7eb',
+              flex: '0 0 auto',
+              padding: '12px 20px',
+            },
+          },
+          children: [],
+        },
+      ],
+    },
+  ],
+}
+```
+
+不要这样写：
+
+```ts
+const body = {
+  id: 'child-body',
+  type: 'div',
+  props: {
+    scrollbar: true,
+    style: {
+      flex: '1 1 auto',
+      minHeight: 0,
+      overflow: 'hidden',
+      padding: '18px 20px',
+    },
+  },
+}
+```
+
+滚动容器自己带 padding 时，drawer / modal 高度计算更容易出问题。
+
 ## 子页面访问父页面
 
 子页面可以读取：
