@@ -31,6 +31,7 @@ async function handleUpdateValue(nextValue: string): Promise<void> {
     :placeholder="field.placeholder.value"
     :type="field.type.value"
     :value="field.value.value"
+    :style="{ width: '100%' }"
     @update:value="handleUpdateValue"
   />
 </template>

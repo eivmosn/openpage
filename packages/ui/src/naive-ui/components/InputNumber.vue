@@ -39,6 +39,7 @@ async function handleUpdateValue(nextValue: number | null): Promise<void> {
     :disabled="field.disabled.value"
     :readonly="readonly"
     :value="value"
+    :style="{ width: '100%' }"
     @update:value="handleUpdateValue"
   />
 </template>

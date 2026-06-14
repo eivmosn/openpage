@@ -21,14 +21,14 @@ export function resolveButtonHtmlType(value: unknown): ButtonHtmlType {
  * 解析按钮尺寸配置。
  *
  * @param value Schema 中传入的按钮尺寸。
- * @returns 返回 Naive UI 支持的按钮尺寸。
+ * @returns 返回 Naive UI 支持的按钮尺寸；未配置时交给组件库默认值。
  */
-export function resolveButtonSize(value: unknown): ButtonSize {
+export function resolveButtonSize(value: unknown): ButtonSize | undefined {
   if (value === 'tiny' || value === 'small' || value === 'medium' || value === 'large') {
     return value
   }
 
-  return 'large'
+  return 'medium'
 }
 
 /**

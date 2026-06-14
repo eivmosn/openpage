@@ -1,6 +1,5 @@
 import type { GlobalThemeOverrides } from 'naive-ui'
 import type { OpenPageComponents } from '../types'
-import { formWrapperKey } from '@openpage/core'
 import AutoComplete from './components/AutoComplete.vue'
 import Button from './components/Button.vue'
 import Carousel from './components/Carousel.vue'
@@ -25,6 +24,7 @@ import Rate from './components/Rate.vue'
 import Select from './components/Select.vue'
 import Slider from './components/Slider.vue'
 import Switch from './components/Switch.vue'
+import Text from './components/Text.vue'
 import Textarea from './components/Textarea.vue'
 import TimePicker from './components/TimePicker.vue'
 import TreeSelect from './components/TreeSelect.vue'
@@ -36,9 +36,10 @@ import { withFormValidation } from './utils/withFormValidation'
  * OpenPage 默认 UI 组件映射。
  */
 export const defaultComponents = {
-  [formWrapperKey]: Form,
+  form: Form,
   carousel: Carousel,
   div: Div,
+  text: Text,
   input: withFormItem(Input),
   nativeInput: withFormItem(withFormValidation(NativeInput, { classPrefix: 'openpage-native-input' })),
   autoComplete: withFormItem(AutoComplete),

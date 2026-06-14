@@ -114,20 +114,20 @@ export function useFormField(props: UiComponentProps, options: UseFormFieldOptio
     const rules: FormItemRule[] = []
 
     if (required.value) {
-      rules.push({
+      rules.push(createFormItemRule({
         required: true,
         message: String(props.component.props.message || `${label.value || '该字段'}不能为空`),
         trigger: ['blur', 'change'],
         validator: validateRequiredValue,
-      })
+      }, path.value))
     }
 
     if (rawRule && typeof rawRule === 'object') {
       if (Array.isArray(rawRule)) {
-        rules.push(...rawRule.filter(isFormItemRule))
+        rules.push(...rawRule.filter(isFormItemRule).map(rule => createFormItemRule(rule, path.value)))
       }
       else if (isFormItemRule(rawRule)) {
-        rules.push(rawRule)
+        rules.push(createFormItemRule(rawRule, path.value))
       }
     }
 
@@ -209,4 +209,22 @@ export function useFormField(props: UiComponentProps, options: UseFormFieldOptio
  */
 function isFormItemRule(rule: unknown): rule is FormItemRule {
   return Boolean(rule) && typeof rule === 'object'
+}
+
+/**
+ * 创建带字段路径标识的 Naive UI 表单项规则。
+ *
+ * @param rule 原始表单项规则。
+ * @param path 当前字段模型路径。
+ * @returns 返回可以被字段级校验过滤的规则。
+ */
+function createFormItemRule(rule: FormItemRule, path: string | undefined): FormItemRule {
+  if (!path) {
+    return rule
+  }
+
+  return {
+    ...rule,
+    key: path,
+  }
 }
