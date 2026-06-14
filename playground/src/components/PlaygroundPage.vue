@@ -99,7 +99,7 @@ const initState = testState
   min-height: 0;
   min-width: 0;
   overflow: hidden;
-    background:
+  background:
     linear-gradient(#f4f4f5 1px, transparent 1px),
     linear-gradient(90deg, #f4f4f5 1px, transparent 1px),
     #fafafa;
@@ -138,17 +138,21 @@ const initState = testState
 @media (max-width: 1100px) {
   .playground {
     flex-direction: column;
-    overflow: auto;
+    overflow: hidden;
   }
 
   .playground__panel {
-    flex: 0 0 auto;
-    min-height: 360px;
+    min-height: 0;
   }
 
-  .playground__editor-panel:first-of-type,
+  .playground__editor-panel:first-of-type {
+    flex: 0 0 min(42vh, 420px);
+    min-height: 240px;
+  }
+
   .playground__preview-panel {
-    flex-basis: 360px;
+    flex: 1 1 auto;
+    min-height: 0;
   }
 
   .playground__divider {
