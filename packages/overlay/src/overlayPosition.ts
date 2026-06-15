@@ -165,10 +165,10 @@ function isModalPosition(position: string | undefined): position is OverlayModal
  */
 function createModalPlacement(position: OverlayModalPosition, style: CSSProperties, baseTransform: string): ResolvedModalPlacement {
   const cssVariables = style as Record<string, string>
-  cssVariables['--op-overlay-modal-transform'] = baseTransform
-  cssVariables['--op-overlay-modal-enter-transform'] = joinTransform(baseTransform, 'scale(0.5)')
-  cssVariables['--op-overlay-modal-leave-transform'] = joinTransform(baseTransform, 'scale(0.5)')
-  cssVariables['--op-overlay-modal-active-transform'] = joinTransform(baseTransform, 'scale(1)')
+  cssVariables['--overlay-vue-modal-transform'] = baseTransform
+  cssVariables['--overlay-vue-modal-enter-transform'] = joinTransform(baseTransform, 'scale(0.5)')
+  cssVariables['--overlay-vue-modal-leave-transform'] = joinTransform(baseTransform, 'scale(0.5)')
+  cssVariables['--overlay-vue-modal-active-transform'] = joinTransform(baseTransform, 'scale(1)')
 
   return {
     className: `is-modal-position-${position}`,

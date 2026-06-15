@@ -14,6 +14,10 @@ export interface OverlayProviderModalOptions {
   position?: OverlayModalPosition
   /** modal 默认偏移量，遵循上右下左。 */
   offset?: OverlayOffset
+  /** modal 右上角操作区自定义渲染函数。 */
+  extra?: OverlayHeaderExtraRenderer
+  /** modal 右上角按钮基础 class，优先级低于单次调用配置。 */
+  actionClassName?: string
 }
 
 /** OverlayProvider 的 drawer 全局配置。 */
@@ -22,6 +26,10 @@ export interface OverlayProviderDrawerOptions {
   radius?: number | string
   /** drawer 默认初始位置。 */
   position?: OverlayDrawerPosition
+  /** drawer 右上角操作区自定义渲染函数。 */
+  extra?: OverlayHeaderExtraRenderer
+  /** drawer 右上角按钮基础 class，优先级低于单次调用配置。 */
+  actionClassName?: string
 }
 
 /** overlay 关闭后返回给调用方的结果。 */
@@ -47,6 +55,31 @@ export interface OverlayFooterContext {
   cancel: () => void
   /** 关闭当前弹层。 */
   close: () => void
+}
+
+/** 自定义标题栏右上角操作区渲染函数。 */
+export type OverlayHeaderExtraRenderer = (ctx: OverlayHeaderExtraContext) => VNodeChild
+
+/** 自定义标题栏右上角操作区收到的上下文。 */
+export interface OverlayHeaderExtraContext {
+  /** 当前弹层实例。 */
+  item: OverlayItem
+  /** 当前弹层类型。 */
+  type: OverlayType
+  /** 可复用的按钮基础 class。 */
+  className: string
+  /** 带类型修饰的按钮 class。 */
+  buttonClass: string[]
+  /** 当前是否处于全屏状态。 */
+  isFullscreen: boolean
+  /** 默认全屏切换按钮节点。 */
+  fullscreen?: VNodeChild
+  /** 默认关闭按钮节点。 */
+  close?: VNodeChild
+  /** 触发全屏切换。 */
+  toggleFullscreen: () => void
+  /** 关闭当前弹层。 */
+  closeOverlay: () => void
 }
 
 /** OverlayProvider 全局配置。 */
@@ -101,6 +134,10 @@ export interface OverlayOptions {
   confirmText?: string
   /** 是否显示全屏切换按钮。 */
   fullscreen?: boolean
+  /** 自定义右上角操作区渲染函数，优先级高于 OverlayProvider 对应类型配置。 */
+  extra?: OverlayHeaderExtraRenderer
+  /** 右上角按钮基础 class，优先级高于 OverlayProvider 对应类型配置。 */
+  actionClassName?: string
   /** modal 和左右 drawer 是否允许拖拽改变尺寸。 */
   resizable?: boolean
   /** 是否让弹层 body 使用 100% 高度。 */
@@ -131,7 +168,38 @@ export interface OverlayContext<T = unknown> {
   setConfirmHandler: (handler?: OverlayConfirmHandler<T>) => void
 }
 
-export type OverlayResolvedOptions = Required<Omit<OverlayOptions, 'footer' | 'offset' | 'position' | 'radius'>> & Pick<OverlayOptions, 'footer' | 'offset' | 'position' | 'radius'>
+export type OverlayResolvedOptions = Required<Omit<OverlayOptions, 'actionClassName' | 'extra' | 'footer' | 'offset' | 'position' | 'radius'>> & Pick<OverlayOptions, 'actionClassName' | 'extra' | 'footer' | 'offset' | 'position' | 'radius'>
+
+/** 组件式 Modal/Drawer 共用 props。 */
+export interface OverlayComponentProps extends Omit<OverlayOptions, 'type'> {}
+
+/** 组件式 Modal/Drawer 关闭事件。 */
+export interface OverlayComponentEmits {
+  /** 同步组件式弹层展示状态。 */
+  'update:modelValue': [value: boolean]
+  /** 关闭后统一触发，包含 close/cancel/confirm。 */
+  'afterClose': [result: OverlayResult]
+  /** close 动作触发。 */
+  'close': [result: OverlayResult]
+  /** cancel 动作触发。 */
+  'cancel': [result: OverlayResult]
+  /** confirm 动作触发。 */
+  'confirm': [result: OverlayResult]
+}
+
+/** 组件式 Modal/Drawer emit 函数类型。 */
+export type OverlayComponentEmit = <Event extends keyof OverlayComponentEmits>(
+  event: Event,
+  ...args: OverlayComponentEmits[Event]
+) => void
+
+/** 打开弹层后返回的控制器。 */
+export interface OverlayController<T = unknown> {
+  /** 当前弹层 id。 */
+  id: string
+  /** 弹层关闭后的结果。 */
+  result: Promise<OverlayResult<T>>
+}
 
 /** 内部维护的弹层实例数据。 */
 export interface OverlayItem {

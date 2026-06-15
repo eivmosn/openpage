@@ -52,10 +52,10 @@ function triggerConfirm(): void {
     v-if="item.options.footer"
     :content="item.options.footer(footerContext)"
   />
-  <div v-else class="op-overlay-footer-actions">
+  <div v-else class="overlay-vue-footer-actions">
     <button
       v-if="item.options.showCancel"
-      class="op-overlay-button op-overlay-button--default"
+      class="overlay-vue-button overlay-vue-button--default"
       :disabled="item.confirmLoading"
       type="button"
       @click="footerContext.cancel"
@@ -64,7 +64,7 @@ function triggerConfirm(): void {
     </button>
     <button
       v-if="item.options.showConfirm"
-      class="op-overlay-button op-overlay-button--primary"
+      class="overlay-vue-button overlay-vue-button--primary"
       :disabled="item.confirmLoading"
       type="button"
       @click="footerContext.triggerConfirm"

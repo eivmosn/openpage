@@ -4,9 +4,8 @@
   "private": true,
   "packageManager": "pnpm@10.34.1",
   "description": "Low-code JSON schema page renderer monorepo.",
-  "author": "",
+  "author": "eivmosn",
   "license": "ISC",
-  "keywords": [],
   "engines": {
     "node": ">=24.14.1 <25",
     "pnpm": ">=10"
@@ -21,6 +20,7 @@
     "prepare": "simple-git-hooks",
     "preinstall": "only-allow pnpm",
     "precommit": "nano-staged",
+    "publish:overlay": "node scripts/publish-overlay.mjs",
     "bench:core": "pnpm --filter @openpage/core bench",
     "test": "pnpm -r --if-present test",
     "test:core": "pnpm --filter @openpage/core test",

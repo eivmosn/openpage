@@ -20,12 +20,22 @@ const panelRef = useTemplateRef<HTMLElement>('panel')
 const geometry = useOverlayGeometry(panelRef, props.item, props)
 const drawerPosition = computed(() => resolveDrawerPosition(props.item, props))
 const modalPlacement = computed(() => resolveModalPlacement(props.item, props))
+const headerExtra = computed(() => props.item.options.extra ?? (
+  props.item.options.type === 'modal'
+    ? props.modal?.extra
+    : props.drawer?.extra
+))
+const actionClassName = computed(() => props.item.options.actionClassName ?? (
+  props.item.options.type === 'modal'
+    ? props.modal?.actionClassName
+    : props.drawer?.actionClassName
+))
 
 const panelClass = computed(() => [
-  'op-overlay-panel',
-  `op-overlay-panel--${props.item.options.type}`,
+  'overlay-vue-panel',
+  `overlay-vue-panel--${props.item.options.type}`,
   props.item.options.type === 'drawer'
-    ? `op-overlay-panel--${drawerPosition.value}`
+    ? `overlay-vue-panel--${drawerPosition.value}`
     : modalPlacement.value.className,
   {
     'is-animating': geometry.animating.value,
@@ -39,7 +49,7 @@ const panelClass = computed(() => [
 ])
 
 const bodyClass = computed(() => [
-  'op-overlay-panel__body',
+  'overlay-vue-panel__body',
   {
     'is-full-height': props.item.options.bodyFullHeight,
     'is-no-padding': !props.item.options.bodyPadding,
@@ -82,13 +92,16 @@ function closeOverlay(): void {
     aria-modal="true"
   >
     <header
-      class="op-overlay-panel__header"
+      class="overlay-vue-panel__header"
       @mousedown.capture="geometry.startDrag"
     >
       <OverlayHeader
+        :action-class-name="actionClassName"
         :closable="item.options.closable"
+        :extra="headerExtra"
         :fullscreen="item.options.fullscreen"
         :is-fullscreen="geometry.fullscreen.value"
+        :item="item"
         :title="item.options.title"
         :variant="item.options.type"
         @close="closeOverlay"
@@ -102,16 +115,16 @@ function closeOverlay(): void {
         v-if="contentWrapper"
         v-bind="contentWrapperProps"
       >
-        <div class="op-overlay-panel__body-content">
+        <div class="overlay-vue-panel__body-content">
           <OverlayBody :item="item" />
         </div>
       </component>
-      <div v-else class="op-overlay-panel__body-content">
+      <div v-else class="overlay-vue-panel__body-content">
         <OverlayBody :item="item" />
       </div>
     </div>
 
-    <footer v-if="item.options.showFooter" class="op-overlay-panel__footer">
+    <footer v-if="item.options.showFooter" class="overlay-vue-panel__footer">
       <OverlayFooter :item="item" />
     </footer>
 
@@ -120,7 +133,7 @@ function closeOverlay(): void {
         v-for="handle in visibleResizeHandles"
         :key="handle.direction"
         type="button"
-        class="op-overlay-panel__resize-handle"
+        class="overlay-vue-panel__resize-handle"
         :class="handle.className"
         :aria-label="`resize-${handle.direction}`"
         @pointerdown="event => geometry.startResize(event, handle.direction)"

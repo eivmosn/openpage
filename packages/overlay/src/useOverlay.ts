@@ -1,37 +1,48 @@
 import type { Component, InjectionKey } from 'vue'
-import type { OverlayAction, OverlayConfirmHandler, OverlayContext, OverlayItem, OverlayOptions, OverlayResolvedOptions, OverlayResult } from './types'
+import type { OverlayAction, OverlayConfirmHandler, OverlayContext, OverlayController, OverlayItem, OverlayOptions, OverlayResult } from './types'
 import { inject, markRaw, nextTick, reactive } from 'vue'
+import { markOverlayObjectRaw, resolveOverlayOptions } from './overlayOptions'
 import { nextOverlayZIndex } from './zIndex'
 
 export const overlayContextKey: InjectionKey<OverlayContext> = Symbol('overlayContext')
 
-const defaultOptions: OverlayResolvedOptions = {
-  type: 'modal',
-  title: '',
-  width: 520,
-  height: '',
-  offset: undefined,
-  position: undefined,
-  radius: undefined,
-  minWidth: 320,
-  minHeight: 240,
-  maskClosable: true,
-  closeOnEsc: true,
-  closable: true,
-  showFooter: true,
-  showCancel: true,
-  showConfirm: true,
-  cancelText: '取消',
-  confirmText: '确认',
-  fullscreen: true,
-  resizable: true,
-  bodyFullHeight: false,
-  bodyScrollable: true,
-  bodyPadding: true,
-  footer: undefined,
-}
-
 const overlays = reactive<OverlayItem[]>([])
+
+/**
+ * 创建弹层实例并返回控制器。
+ *
+ * @param component 要渲染到弹层 body 内的 Vue 组件。
+ * @param props 传给弹层 body 组件的 props。
+ * @param options 弹层配置。
+ * @returns 返回弹层 id 和关闭结果 Promise。
+ */
+function createOverlay<T = unknown>(
+  component: Component,
+  props: Record<string, unknown> = {},
+  options: OverlayOptions = {},
+): OverlayController<T> {
+  const id = createId()
+  const zIndex = nextOverlayZIndex()
+  const result = new Promise<OverlayResult<T>>((resolve) => {
+    const item: OverlayItem = {
+      id,
+      show: false,
+      settled: false,
+      confirmLoading: false,
+      component: markRaw(component),
+      props: markOverlayObjectRaw(props),
+      options: resolveOverlayOptions(markOverlayObjectRaw(options)),
+      zIndex: zIndex.mask,
+      panelZIndex: zIndex.panel,
+      resolve: resolve as OverlayItem['resolve'],
+    }
+
+    overlays.push(item)
+    nextTick(() => show(id))
+  })
+
+  return { id, result }
+}
 
 /**
  * 创建弹层实例 id。
@@ -106,34 +117,6 @@ function getTopOverlay(): OverlayItem | undefined {
 }
 
 /**
- * 让弹层承载的外部对象跳过 Vue 深层代理。
- *
- * @param value 需要存入弹层实例的对象。
- * @returns 返回标记为 raw 的同一个对象。
- */
-function markOverlayObjectRaw<T extends object>(value: T): T {
-  return markRaw(value)
-}
-
-/**
- * 合并弹层默认配置，并忽略调用方传入的 undefined 字段。
- *
- * @param options 调用方传入的弹层配置。
- * @returns 返回完整弹层配置。
- */
-function resolveOverlayOptions(options: OverlayOptions): OverlayResolvedOptions {
-  const resolvedOptions = { ...defaultOptions }
-
-  for (const [key, value] of Object.entries(options)) {
-    if (value !== undefined) {
-      ;(resolvedOptions as Record<string, unknown>)[key] = value
-    }
-  }
-
-  return resolvedOptions
-}
-
-/**
  * 触发指定弹层的确认处理。
  *
  * @param id 弹层 id。
@@ -186,26 +169,23 @@ export const overlay = {
     props: Record<string, unknown> = {},
     options: OverlayOptions = {},
   ): Promise<OverlayResult<T>> {
-    const id = createId()
-    const zIndex = nextOverlayZIndex()
+    return createOverlay<T>(component, props, options).result
+  },
 
-    return new Promise<OverlayResult<T>>((resolve) => {
-      const item: OverlayItem = {
-        id,
-        show: false,
-        settled: false,
-        confirmLoading: false,
-        component: markRaw(component),
-        props: markOverlayObjectRaw(props),
-        options: resolveOverlayOptions(markOverlayObjectRaw(options)),
-        zIndex: zIndex.mask,
-        panelZIndex: zIndex.panel,
-        resolve: resolve as OverlayItem['resolve'],
-      }
-
-      overlays.push(item)
-      nextTick(() => show(id))
-    })
+  /**
+   * 打开一个 overlay 弹层，并返回可精确控制该实例的 id。
+   *
+   * @param component 要渲染到弹层 body 内的 Vue 组件。
+   * @param props 传给弹层 body 组件的 props。
+   * @param options 弹层配置。
+   * @returns 返回弹层 id 和关闭结果 Promise。
+   */
+  openWithController<T = unknown>(
+    component: Component,
+    props: Record<string, unknown> = {},
+    options: OverlayOptions = {},
+  ): OverlayController<T> {
+    return createOverlay<T>(component, props, options)
   },
 
   /**

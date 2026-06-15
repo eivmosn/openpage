@@ -1,12 +1,17 @@
 import './styles.css'
 
-export { OverlayProvider } from './components'
+export { Drawer, Modal, OverlayProvider } from './components'
 export type {
   OverlayAction,
+  OverlayComponentEmits,
+  OverlayComponentProps,
   OverlayConfirmHandler,
   OverlayContext,
+  OverlayController,
   OverlayDrawerPosition,
   OverlayFooterContext,
+  OverlayHeaderExtraContext,
+  OverlayHeaderExtraRenderer,
   OverlayItem,
   OverlayModalPosition,
   OverlayOffset,

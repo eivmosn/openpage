@@ -77,7 +77,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div v-if="item.options.bodyFullHeight" class="op-overlay-body-full">
+  <div v-if="item.options.bodyFullHeight" class="overlay-vue-body-full">
     <component :is="item.component" v-bind="item.props" />
   </div>
   <component :is="item.component" v-else v-bind="item.props" />

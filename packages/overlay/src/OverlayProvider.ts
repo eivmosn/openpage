@@ -39,11 +39,11 @@ export default defineComponent({
       const drawerRadius = formatCssUnit(props.drawer?.radius)
 
       if (modalRadius) {
-        style['--op-overlay-modal-radius'] = modalRadius
+        style['--overlay-vue-modal-radius'] = modalRadius
       }
 
       if (drawerRadius) {
-        style['--op-overlay-radius'] = drawerRadius
+        style['--overlay-vue-radius'] = drawerRadius
       }
 
       return style
@@ -89,8 +89,8 @@ export default defineComponent({
      */
     function getTransitionName(item: typeof overlay.items[number]): string {
       return item.options.type === 'drawer'
-        ? `op-overlay-drawer-${resolveDrawerPosition(item, props)}`
-        : 'op-overlay-modal'
+        ? `overlay-vue-drawer-${resolveDrawerPosition(item, props)}`
+        : 'overlay-vue-modal'
     }
 
     onMounted(() => {
@@ -108,11 +108,11 @@ export default defineComponent({
     return () => [
       slots.default?.(),
       h(Teleport, { to: 'body' }, [
-        h('div', { class: 'op-overlay-container', style: containerStyle.value }, activeItems.value.map(item => [
-          h(Transition, { name: 'op-overlay-mask' }, {
+        h('div', { class: 'overlay-vue-container', style: containerStyle.value }, activeItems.value.map(item => [
+          h(Transition, { name: 'overlay-vue-mask' }, {
             default: () => item.show
               ? h('div', {
-                  class: 'op-overlay-mask',
+                  class: 'overlay-vue-mask',
                   style: { zIndex: item.zIndex },
                   onClick: () => handleMaskClick(item.id),
                 })

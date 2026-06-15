@@ -90,12 +90,12 @@ export function useOverlayGeometry(panelRef: Ref<HTMLElement | null>, item: Over
     }
 
     if (item.options.type === 'drawer') {
-      applyOverlayRadius(style, item, '--op-overlay-radius')
+      applyOverlayRadius(style, item, '--overlay-vue-radius')
       applyDrawerSize(style, resolveDrawerPosition(item, options), widthPx.value, heightPx.value, item)
       return style
     }
 
-    applyOverlayRadius(style, item, '--op-overlay-modal-radius')
+    applyOverlayRadius(style, item, '--overlay-vue-modal-radius')
     style.width = widthPx.value === undefined ? formatCssUnit(item.options.width) : `${widthPx.value}px`
     style.minWidth = `${item.options.minWidth}px`
     style.minHeight = `${item.options.minHeight}px`
@@ -427,7 +427,7 @@ export function useOverlayGeometry(panelRef: Ref<HTMLElement | null>, item: Over
  * @param item 当前弹层实例。
  * @param property 圆角 CSS 变量名。
  */
-function applyOverlayRadius(style: CSSProperties, item: OverlayItem, property: '--op-overlay-radius' | '--op-overlay-modal-radius'): void {
+function applyOverlayRadius(style: CSSProperties, item: OverlayItem, property: '--overlay-vue-radius' | '--overlay-vue-modal-radius'): void {
   const radius = formatCssUnit(item.options.radius)
 
   if (radius) {

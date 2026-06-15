@@ -1,16 +1,23 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import type { OverlayHeaderExtraRenderer, OverlayItem } from './types'
+import { computed, h } from 'vue'
 import CloseIcon from './CloseIcon.vue'
 import FullscreenIcon from './FullscreenIcon.vue'
 import OffscreenIcon from './OffscreenIcon.vue'
+import OverlayRenderContent from './OverlayRenderContent'
 
 const props = withDefaults(defineProps<{
+  actionClassName?: string
+  extra?: OverlayHeaderExtraRenderer
   title?: string
+  item: OverlayItem
   variant?: 'modal' | 'drawer'
   closable?: boolean
   fullscreen?: boolean
   isFullscreen?: boolean
 }>(), {
+  actionClassName: undefined,
+  extra: undefined,
   title: '',
   variant: 'modal',
   closable: true,
@@ -24,9 +31,45 @@ const emit = defineEmits<{
 }>()
 
 const iconButtonClass = computed(() => [
-  'op-overlay-header__button',
-  `op-overlay-header__button--${props.variant}`,
+  props.actionClassName ?? 'overlay-vue-header__button',
+  `overlay-vue-header__button--${props.variant}`,
 ])
+
+const fullscreenButton = computed(() => props.fullscreen
+  ? h('button', {
+      'class': iconButtonClass.value,
+      'type': 'button',
+      'aria-label': '切换全屏',
+      'onClick': (event: MouseEvent) => {
+        event.stopPropagation()
+        emit('toggleFullscreen')
+      },
+    }, [props.isFullscreen ? h(OffscreenIcon) : h(FullscreenIcon)])
+  : undefined)
+
+const closeButton = computed(() => props.closable
+  ? h('button', {
+      'class': iconButtonClass.value,
+      'type': 'button',
+      'aria-label': '关闭',
+      'onClick': (event: MouseEvent) => {
+        event.stopPropagation()
+        emit('close')
+      },
+    }, [h(CloseIcon)])
+  : undefined)
+
+const extraContent = computed(() => props.extra?.({
+  item: props.item,
+  type: props.variant,
+  className: props.actionClassName ?? 'overlay-vue-header__button',
+  buttonClass: iconButtonClass.value,
+  isFullscreen: props.isFullscreen,
+  fullscreen: fullscreenButton.value,
+  close: closeButton.value,
+  toggleFullscreen: () => emit('toggleFullscreen'),
+  closeOverlay: () => emit('close'),
+}))
 
 /**
  * 双击标题栏时切换全屏。
@@ -49,30 +92,16 @@ function handleDoubleClick(event: MouseEvent): void {
 </script>
 
 <template>
-  <div class="op-overlay-header" @dblclick.stop="handleDoubleClick">
-    <div class="op-overlay-header__title">
+  <div class="overlay-vue-header" @dblclick.stop="handleDoubleClick">
+    <div class="overlay-vue-header__title">
       {{ title }}
     </div>
-    <div class="op-overlay-header__actions">
-      <button
-        v-if="fullscreen"
-        :class="iconButtonClass"
-        type="button"
-        aria-label="切换全屏"
-        @click.stop="emit('toggleFullscreen')"
-      >
-        <OffscreenIcon v-if="isFullscreen" />
-        <FullscreenIcon v-else />
-      </button>
-      <button
-        v-if="closable"
-        :class="iconButtonClass"
-        type="button"
-        aria-label="关闭"
-        @click.stop="emit('close')"
-      >
-        <CloseIcon />
-      </button>
+    <div class="overlay-vue-header__actions">
+      <OverlayRenderContent v-if="extraContent" :content="extraContent" />
+      <template v-else>
+        <OverlayRenderContent v-if="fullscreenButton" :content="fullscreenButton" />
+        <OverlayRenderContent v-if="closeButton" :content="closeButton" />
+      </template>
     </div>
   </div>
 </template>
