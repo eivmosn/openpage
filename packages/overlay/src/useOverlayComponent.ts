@@ -1,5 +1,4 @@
-import type { Slots } from 'vue'
-import type { OverlayComponentEmit, OverlayComponentProps, OverlayOptions, OverlayResult, OverlayType } from './types'
+import type { OverlayComponentEmit, OverlayComponentProps, OverlayComponentSlots, OverlayOptions, OverlayResult, OverlayType } from './types'
 import { onBeforeUnmount, watch } from 'vue'
 import OverlaySlotContent from './OverlaySlotContent'
 import { overlay } from './useOverlay'
@@ -8,7 +7,7 @@ interface UseOverlayComponentOptions {
   type: OverlayType
   props: OverlayComponentProps & { modelValue?: boolean }
   emit: OverlayComponentEmit
-  slots: Slots
+  slots: Readonly<OverlayComponentSlots>
 }
 
 /**
@@ -45,13 +44,13 @@ export function useOverlayComponent(options: UseOverlayComponentOptions): void {
       cancelText: options.props.cancelText,
       confirmText: options.props.confirmText,
       fullscreen: options.props.fullscreen,
-      extra: options.props.extra,
+      extra: options.props.extra ?? options.slots.extra,
       actionClassName: options.props.actionClassName,
       resizable: options.props.resizable,
       bodyFullHeight: options.props.bodyFullHeight,
       bodyScrollable: options.props.bodyScrollable,
       bodyPadding: options.props.bodyPadding,
-      footer: options.props.footer,
+      footer: options.props.footer ?? options.slots.footer,
     }
   }
 

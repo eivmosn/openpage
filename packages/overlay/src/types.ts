@@ -72,9 +72,9 @@ export interface OverlayHeaderExtraContext {
   buttonClass: string[]
   /** 当前是否处于全屏状态。 */
   isFullscreen: boolean
-  /** 默认全屏切换按钮节点。 */
+  /** 默认全屏切换按钮节点，可通过 <component :is="fullscreen" /> 渲染。 */
   fullscreen?: VNodeChild
-  /** 默认关闭按钮节点。 */
+  /** 默认关闭按钮节点，可通过 <component :is="close" /> 渲染。 */
   close?: VNodeChild
   /** 触发全屏切换。 */
   toggleFullscreen: () => void
@@ -172,6 +172,16 @@ export type OverlayResolvedOptions = Required<Omit<OverlayOptions, 'actionClassN
 
 /** 组件式 Modal/Drawer 共用 props。 */
 export interface OverlayComponentProps extends Omit<OverlayOptions, 'type'> {}
+
+/** 组件式 Modal/Drawer 支持的插槽。 */
+export interface OverlayComponentSlots {
+  /** 内容区域默认插槽。 */
+  default?: () => VNodeChild
+  /** 自定义底部操作栏插槽。 */
+  footer?: (ctx: OverlayFooterContext) => VNodeChild
+  /** 自定义右上角操作区插槽。 */
+  extra?: (ctx: OverlayHeaderExtraContext) => VNodeChild
+}
 
 /** 组件式 Modal/Drawer 关闭事件。 */
 export interface OverlayComponentEmits {

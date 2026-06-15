@@ -372,10 +372,10 @@ export function useOverlayGeometry(panelRef: Ref<HTMLElement | null>, item: Over
 
     clearFullscreenAnimation()
     syncRect(current)
-    animating.value = true
 
     animationFrameId = window.requestAnimationFrame(() => {
       animationFrameId = 0
+      animating.value = true
       syncRect(target)
     })
 

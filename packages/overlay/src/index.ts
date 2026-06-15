@@ -5,6 +5,7 @@ export type {
   OverlayAction,
   OverlayComponentEmits,
   OverlayComponentProps,
+  OverlayComponentSlots,
   OverlayConfirmHandler,
   OverlayContext,
   OverlayController,
