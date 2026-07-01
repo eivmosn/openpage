@@ -3,6 +3,7 @@ import type { OverlayProviderProps } from './types'
 import { computed, defineComponent, h, onBeforeUnmount, onMounted, Teleport, Transition, watchEffect } from 'vue'
 import OverlayPanel from './OverlayPanel.vue'
 import { resolveDrawerPosition } from './overlayPosition'
+import { isStaticPosition, isViewportOverlayTarget, resolveOverlayTarget } from './overlayTarget'
 import { overlay } from './useOverlay'
 import { formatCssUnit } from './utils'
 import { setOverlayZIndex } from './zIndex'
@@ -33,6 +34,7 @@ export default defineComponent({
   },
   setup(props, { slots }) {
     const activeItems = computed(() => overlay.items)
+    const positionedTargets = new Map<HTMLElement, string>()
     const containerStyle = computed<CSSProperties>(() => {
       const style: CSSProperties = {}
       const modalRadius = formatCssUnit(props.modal?.radius)
@@ -93,6 +95,59 @@ export default defineComponent({
         : 'overlay-vue-modal'
     }
 
+    /**
+     * 解析可自动补定位上下文的本地挂载元素。
+     *
+     * @param target Teleport 挂载目标。
+     * @returns 返回可操作的 HTMLElement。
+     */
+    function resolveLocalTargetElement(target: ReturnType<typeof resolveOverlayTarget>): HTMLElement | undefined {
+      if (typeof document === 'undefined' || typeof HTMLElement === 'undefined') {
+        return undefined
+      }
+
+      if (isViewportOverlayTarget(target)) {
+        return undefined
+      }
+
+      if (typeof target === 'string') {
+        const element = document.querySelector(target)
+
+        return element instanceof HTMLElement ? element : undefined
+      }
+
+      return target instanceof HTMLElement ? target : undefined
+    }
+
+    /**
+     * 为本地挂载目标自动补足定位上下文。
+     *
+     * @param targets 当前活跃弹层使用到的本地挂载元素。
+     */
+    function syncLocalTargetPosition(targets: Set<HTMLElement>): void {
+      if (typeof window === 'undefined') {
+        return
+      }
+
+      for (const target of targets) {
+        if (positionedTargets.has(target) || !isStaticPosition(window.getComputedStyle(target).position)) {
+          continue
+        }
+
+        positionedTargets.set(target, target.style.position)
+        target.style.position = 'relative'
+      }
+
+      for (const [target, previousPosition] of positionedTargets) {
+        if (targets.has(target)) {
+          continue
+        }
+
+        target.style.position = previousPosition
+        positionedTargets.delete(target)
+      }
+    }
+
     onMounted(() => {
       window.addEventListener('keydown', handleKeydown)
     })
@@ -101,40 +156,65 @@ export default defineComponent({
       setOverlayZIndex(props.zIndex)
     })
 
+    watchEffect(() => {
+      const targets = new Set<HTMLElement>()
+
+      for (const item of activeItems.value) {
+        const target = resolveLocalTargetElement(resolveOverlayTarget(item, props))
+
+        if (target) {
+          targets.add(target)
+        }
+      }
+
+      syncLocalTargetPosition(targets)
+    })
+
     onBeforeUnmount(() => {
       window.removeEventListener('keydown', handleKeydown)
+      syncLocalTargetPosition(new Set())
     })
 
     return () => [
       slots.default?.(),
-      h(Teleport, { to: 'body' }, [
-        h('div', { class: 'overlay-vue-container', style: containerStyle.value }, activeItems.value.map(item => [
-          h(Transition, { name: 'overlay-vue-mask' }, {
-            default: () => item.show
-              ? h('div', {
-                  class: 'overlay-vue-mask',
-                  style: { zIndex: item.zIndex },
-                  onClick: () => handleMaskClick(item.id),
-                })
-              : null,
-          }),
-          h(Transition, {
-            name: getTransitionName(item),
-            onAfterLeave: () => overlay.afterLeave(item.id),
-          }, {
-            default: () => item.show
-              ? h(OverlayPanel, {
-                  key: item.id,
-                  contentWrapper: props.contentWrapper,
-                  contentWrapperProps: props.contentWrapperProps,
-                  drawer: props.drawer,
-                  item,
-                  modal: props.modal,
-                })
-              : null,
-          }),
-        ])),
-      ]),
+      ...activeItems.value.map((item) => {
+        const target = resolveOverlayTarget(item, props)
+
+        return h(Teleport, { key: item.id, to: target }, [
+          h('div', {
+            class: [
+              'overlay-vue-container',
+              { 'is-local-target': !isViewportOverlayTarget(target) },
+            ],
+            style: containerStyle.value,
+          }, [
+            h(Transition, { name: 'overlay-vue-mask' }, {
+              default: () => item.show
+                ? h('div', {
+                    class: 'overlay-vue-mask',
+                    style: { zIndex: item.zIndex },
+                    onClick: () => handleMaskClick(item.id),
+                  })
+                : null,
+            }),
+            h(Transition, {
+              name: getTransitionName(item),
+              onAfterLeave: () => overlay.afterLeave(item.id),
+            }, {
+              default: () => item.show
+                ? h(OverlayPanel, {
+                    key: item.id,
+                    contentWrapper: props.contentWrapper,
+                    contentWrapperProps: props.contentWrapperProps,
+                    drawer: props.drawer,
+                    item,
+                    modal: props.modal,
+                  })
+                : null,
+            }),
+          ]),
+        ])
+      }),
     ]
   },
 })

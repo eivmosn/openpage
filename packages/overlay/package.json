@@ -1,8 +1,8 @@
 {
   "name": "@openpage/overlay",
   "type": "module",
-  "version": "1.0.0",
-  "description": "Vue3 functional component overlay (modal/drawer)",
+  "version": "1.0.1",
+  "description": "Vue3 overlay component (modal/drawer)",
   "author": "eivmosn",
   "keywords": [
     "vue",
@@ -25,6 +25,7 @@
   ],
   "scripts": {
     "build": "tsdown",
+    "test": "vitest run",
     "typecheck": "vue-tsc --noEmit -p tsconfig.json"
   },
   "peerDependencies": {
@@ -35,6 +36,7 @@
     "@vitejs/plugin-vue": "catalog:",
     "tsdown": "catalog:",
     "typescript": "catalog:",
+    "vitest": "catalog:",
     "vue": "catalog:",
     "vue-tsc": "catalog:"
   }

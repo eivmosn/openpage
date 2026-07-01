@@ -27,6 +27,7 @@ export function useOverlayComponent(options: UseOverlayComponentOptions): void {
   function createOverlayOptions(): OverlayOptions {
     return {
       type: options.type,
+      to: options.props.to,
       title: options.props.title,
       width: options.props.width,
       height: options.props.height,

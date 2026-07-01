@@ -5,6 +5,7 @@ import OverlayBody from './OverlayBody.vue'
 import OverlayFooter from './OverlayFooter.vue'
 import OverlayHeader from './OverlayHeader.vue'
 import { resolveDrawerPosition, resolveModalPlacement } from './overlayPosition'
+import { resolveOverlayTarget } from './overlayTarget'
 import { overlay } from './useOverlay'
 import { useOverlayGeometry } from './useOverlayGeometry'
 
@@ -17,7 +18,8 @@ const props = defineProps<{
 }>()
 
 const panelRef = useTemplateRef<HTMLElement>('panel')
-const geometry = useOverlayGeometry(panelRef, props.item, props)
+const overlayTarget = computed(() => resolveOverlayTarget(props.item, props))
+const geometry = useOverlayGeometry(panelRef, props.item, props, overlayTarget)
 const drawerPosition = computed(() => resolveDrawerPosition(props.item, props))
 const modalPlacement = computed(() => resolveModalPlacement(props.item, props))
 const headerExtra = computed(() => props.item.options.extra ?? (

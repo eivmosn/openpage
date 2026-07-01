@@ -9,6 +9,7 @@ const optionalBooleanProp = {
 /** 组件式 Modal/Drawer 的公共 props 声明。 */
 export const overlayComponentProps = {
   modelValue: Boolean,
+  to: [String, Object] as PropType<OverlayComponentProps['to']>,
   title: String,
   width: [Number, String] as PropType<OverlayComponentProps['width']>,
   height: [Number, String] as PropType<OverlayComponentProps['height']>,

@@ -4,6 +4,7 @@ import { markRaw } from 'vue'
 /** overlay.open 的默认配置。 */
 export const defaultOptions: OverlayResolvedOptions = {
   type: 'modal',
+  to: undefined,
   title: '',
   width: 520,
   height: '',

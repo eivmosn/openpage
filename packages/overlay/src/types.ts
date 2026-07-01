@@ -1,13 +1,16 @@
-import type { Component, VNodeChild } from 'vue'
+import type { Component, TeleportProps, VNodeChild } from 'vue'
 
 export type OverlayType = 'modal' | 'drawer'
 export type OverlayAction = 'confirm' | 'cancel' | 'close'
 export type OverlayDrawerPosition = 'right' | 'left' | 'top' | 'bottom'
 export type OverlayModalPosition = 'center' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'left' | 'right' | 'bottom'
 export type OverlayOffset = readonly [top?: number | null, right?: number | null, bottom?: number | null, left?: number | null]
+export type OverlayTarget = TeleportProps['to']
 
 /** OverlayProvider 的 modal 全局配置。 */
 export interface OverlayProviderModalOptions {
+  /** modal 挂载目标，透传给 Vue Teleport 的 to，默认 body。 */
+  to?: OverlayTarget
   /** modal 圆角，支持数字像素值或 CSS 长度。 */
   radius?: number | string
   /** modal 默认初始位置。 */
@@ -22,6 +25,8 @@ export interface OverlayProviderModalOptions {
 
 /** OverlayProvider 的 drawer 全局配置。 */
 export interface OverlayProviderDrawerOptions {
+  /** drawer 挂载目标，透传给 Vue Teleport 的 to，默认 body。 */
+  to?: OverlayTarget
   /** drawer 圆角，支持数字像素值或 CSS 长度。 */
   radius?: number | string
   /** drawer 默认初始位置。 */
@@ -100,6 +105,8 @@ export interface OverlayProviderProps {
 export interface OverlayOptions {
   /** 弹层类型：modal 为居中弹窗，drawer 为抽屉。 */
   type?: OverlayType
+  /** 弹层挂载目标，透传给 Vue Teleport 的 to，优先级高于 OverlayProvider 对应类型配置。 */
+  to?: OverlayTarget
   /** 弹层初始位置，modal 和 drawer 会按各自支持的位置解析。 */
   position?: OverlayModalPosition | OverlayDrawerPosition
   /** 弹层标题。 */
@@ -168,7 +175,7 @@ export interface OverlayContext<T = unknown> {
   setConfirmHandler: (handler?: OverlayConfirmHandler<T>) => void
 }
 
-export type OverlayResolvedOptions = Required<Omit<OverlayOptions, 'actionClassName' | 'extra' | 'footer' | 'offset' | 'position' | 'radius'>> & Pick<OverlayOptions, 'actionClassName' | 'extra' | 'footer' | 'offset' | 'position' | 'radius'>
+export type OverlayResolvedOptions = Required<Omit<OverlayOptions, 'actionClassName' | 'extra' | 'footer' | 'offset' | 'position' | 'radius' | 'to'>> & Pick<OverlayOptions, 'actionClassName' | 'extra' | 'footer' | 'offset' | 'position' | 'radius' | 'to'>
 
 /** 组件式 Modal/Drawer 共用 props。 */
 export interface OverlayComponentProps extends Omit<OverlayOptions, 'type'> {}

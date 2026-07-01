@@ -1,8 +1,9 @@
 import type { CSSProperties, Ref } from 'vue'
 import type { OverlayPositionOptions } from './overlayPosition'
-import type { OverlayDrawerPosition, OverlayItem } from './types'
-import { computed, onBeforeUnmount, shallowRef } from 'vue'
+import type { OverlayDrawerPosition, OverlayItem, OverlayTarget } from './types'
+import { computed, onBeforeUnmount, shallowRef, toValue } from 'vue'
 import { isHorizontalDrawer, resolveDrawerPosition, resolveModalPlacement } from './overlayPosition'
+import { isViewportOverlayTarget } from './overlayTarget'
 import { clamp, formatCssUnit, isInteractiveTarget } from './utils'
 
 type ResizeDirection = 'n' | 'e' | 's' | 'w' | 'ne' | 'nw' | 'se' | 'sw'
@@ -28,6 +29,13 @@ interface DragState extends PanelRect {
 interface DragOffset {
   x: number
   y: number
+}
+
+interface BoundsRect {
+  width: number
+  height: number
+  left: number
+  top: number
 }
 
 /** 弹层几何状态控制器。 */
@@ -61,9 +69,15 @@ const resizeHandles: OverlayGeometry['resizeHandles'] = [
  * @param panelRef 弹层 DOM 引用。
  * @param item 当前弹层实例。
  * @param options 弹层全局几何配置。
+ * @param target 弹层挂载目标，用于计算局部拖拽和全屏边界。
  * @returns 返回弹层几何状态控制器。
  */
-export function useOverlayGeometry(panelRef: Ref<HTMLElement | null>, item: OverlayItem, options: OverlayPositionOptions = {}): OverlayGeometry {
+export function useOverlayGeometry(
+  panelRef: Ref<HTMLElement | null>,
+  item: OverlayItem,
+  options: OverlayPositionOptions = {},
+  target?: Ref<OverlayTarget>,
+): OverlayGeometry {
   const widthPx = shallowRef<number>()
   const heightPx = shallowRef<number>()
   const leftPx = shallowRef<number>()
@@ -113,7 +127,6 @@ export function useOverlayGeometry(panelRef: Ref<HTMLElement | null>, item: Over
       style.margin = '0'
       style.maxHeight = 'none'
       style.maxWidth = 'none'
-      style.position = 'fixed'
       style.top = `${topPx.value}px`
 
       if (dragging.value) {
@@ -163,7 +176,7 @@ export function useOverlayGeometry(panelRef: Ref<HTMLElement | null>, item: Over
       return
     }
 
-    const rect = getResizedRect(resizeState, event, item.options.minWidth, item.options.minHeight)
+    const rect = getResizedRect(resizeState, event, item.options.minWidth, item.options.minHeight, getBoundsRect())
     syncRect(rect)
   }
 
@@ -211,7 +224,7 @@ export function useOverlayGeometry(panelRef: Ref<HTMLElement | null>, item: Over
       return
     }
 
-    const offset = getDragOffset(dragState, event)
+    const offset = getDragOffset(dragState, event, getBoundsRect())
 
     scheduleDragOffset(offset)
   }
@@ -274,10 +287,12 @@ export function useOverlayGeometry(panelRef: Ref<HTMLElement | null>, item: Over
    * @param rect 需要同步的弹层矩形。
    */
   function syncRect(rect: PanelRect): void {
+    const bounds = getBoundsRect()
+
     widthPx.value = rect.width
     heightPx.value = rect.height
-    leftPx.value = rect.left
-    topPx.value = rect.top
+    leftPx.value = rect.left - bounds.left
+    topPx.value = rect.top - bounds.top
     resetDragOffset()
   }
 
@@ -391,12 +406,31 @@ export function useOverlayGeometry(panelRef: Ref<HTMLElement | null>, item: Over
    * @returns 返回覆盖视口的矩形。
    */
   function createFullscreenRect(): PanelRect {
+    const bounds = getBoundsRect()
+
     return {
-      left: 0,
-      top: 0,
-      width: Math.max(item.options.minWidth, window.innerWidth),
-      height: Math.max(item.options.minHeight, window.innerHeight),
+      left: bounds.left,
+      top: bounds.top,
+      width: Math.max(item.options.minWidth, bounds.width),
+      height: Math.max(item.options.minHeight, bounds.height),
     }
+  }
+
+  /**
+   * 获取当前弹层可活动边界。
+   *
+   * @returns 返回视口或本地挂载容器的矩形。
+   */
+  function getBoundsRect(): BoundsRect {
+    const currentTarget = target ? toValue(target) : undefined
+
+    if (isViewportOverlayTarget(currentTarget)) {
+      return toBoundsRect(undefined, window.innerWidth, window.innerHeight)
+    }
+
+    const targetElement = resolveTargetElement(currentTarget)
+
+    return toBoundsRect(targetElement?.getBoundingClientRect(), window.innerWidth, window.innerHeight)
   }
 
   onBeforeUnmount(() => {
@@ -462,7 +496,7 @@ function applyDrawerSize(style: CSSProperties, position: OverlayDrawerPosition, 
  * @param minHeight 最小高度。
  * @returns 返回 resize 后的矩形。
  */
-function getResizedRect(state: ResizeState, event: PointerEvent, minWidth: number, minHeight: number): PanelRect {
+function getResizedRect(state: ResizeState, event: PointerEvent, minWidth: number, minHeight: number, bounds: BoundsRect): PanelRect {
   const deltaX = event.clientX - state.startX
   const deltaY = event.clientY - state.startY
   let width = state.width
@@ -471,20 +505,20 @@ function getResizedRect(state: ResizeState, event: PointerEvent, minWidth: numbe
   let top = state.top
 
   if (state.direction.includes('e')) {
-    width = clamp(state.width + deltaX, minWidth, window.innerWidth - state.left)
+    width = clamp(state.width + deltaX, minWidth, bounds.left + bounds.width - state.left)
   }
 
   if (state.direction.includes('s')) {
-    height = clamp(state.height + deltaY, minHeight, window.innerHeight - state.top)
+    height = clamp(state.height + deltaY, minHeight, bounds.top + bounds.height - state.top)
   }
 
   if (state.direction.includes('w')) {
-    width = clamp(state.width - deltaX, minWidth, state.left + state.width)
+    width = clamp(state.width - deltaX, minWidth, state.left + state.width - bounds.left)
     left = state.left + state.width - width
   }
 
   if (state.direction.includes('n')) {
-    height = clamp(state.height - deltaY, minHeight, state.top + state.height)
+    height = clamp(state.height - deltaY, minHeight, state.top + state.height - bounds.top)
     top = state.top + state.height - height
   }
 
@@ -496,14 +530,72 @@ function getResizedRect(state: ResizeState, event: PointerEvent, minWidth: numbe
  *
  * @param state 拖拽初始状态。
  * @param event 鼠标移动事件。
+ * @param bounds 弹层可活动边界。
  * @returns 返回用于 translate3d 的偏移量。
  */
-function getDragOffset(state: DragState, event: MouseEvent): DragOffset {
-  const nextLeft = clamp(state.left + event.clientX - state.startX, 0, window.innerWidth - state.width)
-  const nextTop = clamp(state.top + event.clientY - state.startY, 0, window.innerHeight - state.height)
+function getDragOffset(state: DragState, event: MouseEvent, bounds: BoundsRect): DragOffset {
+  const nextRect = clampPanelRectToBounds({
+    height: state.height,
+    left: state.left + event.clientX - state.startX,
+    top: state.top + event.clientY - state.startY,
+    width: state.width,
+  }, bounds)
 
   return {
-    x: nextLeft - state.left,
-    y: nextTop - state.top,
+    x: nextRect.left - state.left,
+    y: nextRect.top - state.top,
   }
+}
+
+/**
+ * 将 DOMRect 转成几何边界，未传入时使用视口尺寸。
+ *
+ * @param rect 本地挂载目标矩形。
+ * @param viewportWidth 视口宽度。
+ * @param viewportHeight 视口高度。
+ * @returns 返回可用于几何计算的边界。
+ */
+export function toBoundsRect(rect: Pick<DOMRect, 'height' | 'left' | 'top' | 'width'> | undefined, viewportWidth: number, viewportHeight: number): BoundsRect {
+  return {
+    height: rect?.height ?? viewportHeight,
+    left: rect?.left ?? 0,
+    top: rect?.top ?? 0,
+    width: rect?.width ?? viewportWidth,
+  }
+}
+
+/**
+ * 将面板矩形限制在指定边界内。
+ *
+ * @param rect 面板矩形。
+ * @param bounds 可活动边界。
+ * @returns 返回被边界裁剪后的矩形。
+ */
+export function clampPanelRectToBounds(rect: PanelRect, bounds: BoundsRect): PanelRect {
+  return {
+    height: rect.height,
+    left: clamp(rect.left, bounds.left, bounds.left + bounds.width - rect.width),
+    top: clamp(rect.top, bounds.top, bounds.top + bounds.height - rect.height),
+    width: rect.width,
+  }
+}
+
+/**
+ * 从 Teleport 目标解析 DOM 元素。
+ *
+ * @param target Teleport 挂载目标。
+ * @returns 返回可读取矩形的元素。
+ */
+function resolveTargetElement(target: OverlayTarget): HTMLElement | undefined {
+  if (typeof document === 'undefined' || typeof HTMLElement === 'undefined') {
+    return undefined
+  }
+
+  if (typeof target === 'string') {
+    const element = document.querySelector(target)
+
+    return element instanceof HTMLElement ? element : undefined
+  }
+
+  return target instanceof HTMLElement ? target : undefined
 }
