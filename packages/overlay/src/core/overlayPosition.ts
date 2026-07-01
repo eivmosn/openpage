@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'vue'
-import type { OverlayDrawerPosition, OverlayItem, OverlayModalPosition, OverlayOffset, OverlayProviderDrawerOptions, OverlayProviderModalOptions } from './types'
+import type { OverlayDrawerPosition, OverlayItem, OverlayModalPosition, OverlayOffset, OverlayProviderDrawerOptions, OverlayProviderModalOptions } from '../types'
 
 export interface OverlayPositionOptions {
   modal?: OverlayProviderModalOptions

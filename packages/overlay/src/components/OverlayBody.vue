@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { OverlayConfirmHandler, OverlayItem } from './types'
+import type { OverlayConfirmHandler, OverlayItem } from '../types'
 import { getCurrentScope, onBeforeUnmount, onScopeDispose, provide } from 'vue'
-import { overlay, overlayContextKey } from './useOverlay'
+import { overlay, overlayContextKey } from '../composables/useOverlay'
 
 const props = defineProps<{
   item: OverlayItem

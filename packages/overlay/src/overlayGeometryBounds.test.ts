@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { clampPanelRectToBounds, toBoundsRect } from './useOverlayGeometry'
+import { clampPanelRectToBounds, toBoundsRect } from './composables/useOverlayGeometry'
 
 describe('overlay geometry bounds', () => {
   it('uses viewport bounds without an offset for body mounted overlays', () => {

@@ -1,6 +1,8 @@
 import './styles.css'
 
 export { Drawer, Modal, OverlayProvider } from './components'
+export { overlay, useOverlay, useOverlayContext } from './composables/useOverlay'
+export { resetOverlayZIndex } from './core/zIndex'
 export type {
   OverlayAction,
   OverlayComponentEmits,
@@ -23,5 +25,3 @@ export type {
   OverlayResult,
   OverlayType,
 } from './types'
-export { overlay, useOverlay, useOverlayContext } from './useOverlay'
-export { resetOverlayZIndex } from './zIndex'

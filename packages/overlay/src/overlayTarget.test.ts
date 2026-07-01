@@ -1,6 +1,6 @@
 import type { OverlayItem } from './types'
 import { describe, expect, it } from 'vitest'
-import { isStaticPosition, isViewportOverlayTarget, resolveOverlayTarget } from './overlayTarget'
+import { isStaticPosition, isViewportOverlayTarget, resolveOverlayTarget } from './core/overlayTarget'
 
 /**
  * 创建只包含目标解析所需字段的弹层实例。

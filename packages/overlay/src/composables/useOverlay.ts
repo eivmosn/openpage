@@ -1,8 +1,8 @@
 import type { Component, InjectionKey } from 'vue'
-import type { OverlayAction, OverlayConfirmHandler, OverlayContext, OverlayController, OverlayItem, OverlayOptions, OverlayResult } from './types'
+import type { OverlayAction, OverlayConfirmHandler, OverlayContext, OverlayController, OverlayItem, OverlayOptions, OverlayResult } from '../types'
 import { inject, markRaw, nextTick, reactive } from 'vue'
-import { markOverlayObjectRaw, resolveOverlayOptions } from './overlayOptions'
-import { nextOverlayZIndex } from './zIndex'
+import { markOverlayObjectRaw, resolveOverlayOptions } from '../core/overlayOptions'
+import { nextOverlayZIndex } from '../core/zIndex'
 
 export const overlayContextKey: InjectionKey<OverlayContext> = Symbol('overlayContext')
 

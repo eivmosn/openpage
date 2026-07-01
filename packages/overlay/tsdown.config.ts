@@ -7,7 +7,9 @@ export default defineConfig({
   plugins: [
     vue(),
   ],
-  dts: true,
+  dts: {
+    vue: true,
+  },
   clean: true,
   sourcemap: false,
   css: {

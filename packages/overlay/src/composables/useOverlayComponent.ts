@@ -1,6 +1,6 @@
-import type { OverlayComponentEmit, OverlayComponentProps, OverlayComponentSlots, OverlayOptions, OverlayResult, OverlayType } from './types'
+import type { OverlayComponentEmit, OverlayComponentProps, OverlayComponentSlots, OverlayOptions, OverlayResult, OverlayType } from '../types'
 import { onBeforeUnmount, watch } from 'vue'
-import OverlaySlotContent from './OverlaySlotContent'
+import OverlaySlotContent from '../components/OverlaySlotContent'
 import { overlay } from './useOverlay'
 
 interface UseOverlayComponentOptions {
@@ -29,6 +29,8 @@ export function useOverlayComponent(options: UseOverlayComponentOptions): void {
       type: options.type,
       to: options.props.to,
       title: options.props.title,
+      ariaLabel: options.props.ariaLabel,
+      ariaDescription: options.props.ariaDescription,
       width: options.props.width,
       height: options.props.height,
       radius: options.props.radius,

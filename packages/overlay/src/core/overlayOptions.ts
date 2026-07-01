@@ -1,4 +1,4 @@
-import type { OverlayOptions, OverlayResolvedOptions } from './types'
+import type { OverlayOptions, OverlayResolvedOptions } from '../types'
 import { markRaw } from 'vue'
 
 /** overlay.open 的默认配置。 */
@@ -6,6 +6,8 @@ export const defaultOptions: OverlayResolvedOptions = {
   type: 'modal',
   to: undefined,
   title: '',
+  ariaLabel: undefined,
+  ariaDescription: undefined,
   width: 520,
   height: '',
   offset: undefined,

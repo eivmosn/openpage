@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { OverlayFooterContext, OverlayItem } from './types'
+import type { OverlayFooterContext, OverlayItem } from '../types'
 import { computed } from 'vue'
+import { overlay } from '../composables/useOverlay'
 import OverlayRenderContent from './OverlayRenderContent'
-import { overlay } from './useOverlay'
 
 const props = defineProps<{
   item: OverlayItem
@@ -65,6 +65,7 @@ function triggerConfirm(): void {
     <button
       v-if="item.options.showConfirm"
       class="overlay-vue-button overlay-vue-button--primary"
+      :aria-busy="item.confirmLoading ? 'true' : undefined"
       :disabled="item.confirmLoading"
       type="button"
       @click="footerContext.triggerConfirm"

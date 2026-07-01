@@ -1,10 +1,10 @@
 import type { CSSProperties, Ref } from 'vue'
-import type { OverlayPositionOptions } from './overlayPosition'
-import type { OverlayDrawerPosition, OverlayItem, OverlayTarget } from './types'
+import type { OverlayPositionOptions } from '../core/overlayPosition'
+import type { OverlayDrawerPosition, OverlayItem, OverlayTarget } from '../types'
 import { computed, onBeforeUnmount, shallowRef, toValue } from 'vue'
-import { isHorizontalDrawer, resolveDrawerPosition, resolveModalPlacement } from './overlayPosition'
-import { isViewportOverlayTarget } from './overlayTarget'
-import { clamp, formatCssUnit, isInteractiveTarget } from './utils'
+import { isHorizontalDrawer, resolveDrawerPosition, resolveModalPlacement } from '../core/overlayPosition'
+import { isViewportOverlayTarget } from '../core/overlayTarget'
+import { clamp, formatCssUnit, isInteractiveTarget } from '../shared/utils'
 
 type ResizeDirection = 'n' | 'e' | 's' | 'w' | 'ne' | 'nw' | 'se' | 'sw'
 

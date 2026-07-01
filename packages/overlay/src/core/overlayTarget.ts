@@ -1,4 +1,4 @@
-import type { OverlayItem, OverlayProviderProps, OverlayTarget } from './types'
+import type { OverlayItem, OverlayProviderProps, OverlayTarget } from '../types'
 
 /**
  * 解析弹层最终挂载目标。

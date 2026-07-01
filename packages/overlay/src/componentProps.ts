@@ -11,6 +11,8 @@ export const overlayComponentProps = {
   modelValue: Boolean,
   to: [String, Object] as PropType<OverlayComponentProps['to']>,
   title: String,
+  ariaLabel: String,
+  ariaDescription: String,
   width: [Number, String] as PropType<OverlayComponentProps['width']>,
   height: [Number, String] as PropType<OverlayComponentProps['height']>,
   radius: [Number, String] as PropType<OverlayComponentProps['radius']>,

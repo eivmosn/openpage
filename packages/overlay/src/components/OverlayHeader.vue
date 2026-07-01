@@ -1,14 +1,15 @@
 <script setup lang="ts">
-import type { OverlayHeaderExtraRenderer, OverlayItem } from './types'
+import type { OverlayHeaderExtraRenderer, OverlayItem } from '../types'
 import { computed, h } from 'vue'
-import CloseIcon from './CloseIcon.vue'
-import FullscreenIcon from './FullscreenIcon.vue'
-import OffscreenIcon from './OffscreenIcon.vue'
+import CloseIcon from './icons/CloseIcon.vue'
+import FullscreenIcon from './icons/FullscreenIcon.vue'
+import OffscreenIcon from './icons/OffscreenIcon.vue'
 import OverlayRenderContent from './OverlayRenderContent'
 
 const props = withDefaults(defineProps<{
   actionClassName?: string
   extra?: OverlayHeaderExtraRenderer
+  titleId?: string
   title?: string
   item: OverlayItem
   variant?: 'modal' | 'drawer'
@@ -18,6 +19,7 @@ const props = withDefaults(defineProps<{
 }>(), {
   actionClassName: undefined,
   extra: undefined,
+  titleId: undefined,
   title: '',
   variant: 'modal',
   closable: true,
@@ -93,9 +95,14 @@ function handleDoubleClick(event: MouseEvent): void {
 
 <template>
   <div class="overlay-vue-header" @dblclick.stop="handleDoubleClick">
-    <div class="overlay-vue-header__title">
+    <h2
+      v-if="title"
+      :id="titleId"
+      class="overlay-vue-header__title"
+    >
       {{ title }}
-    </div>
+    </h2>
+    <div v-else class="overlay-vue-header__title" aria-hidden="true" />
     <div class="overlay-vue-header__actions">
       <OverlayRenderContent v-if="extraContent" :content="extraContent" />
       <template v-else>

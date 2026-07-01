@@ -111,6 +111,10 @@ export interface OverlayOptions {
   position?: OverlayModalPosition | OverlayDrawerPosition
   /** 弹层标题。 */
   title?: string
+  /** 无标题弹层的可访问名称；有 title 时优先使用 title 作为 aria-labelledby。 */
+  ariaLabel?: string
+  /** 弹层内容的可访问描述；不传时使用内容区域作为 aria-describedby 目标。 */
+  ariaDescription?: string
   /** 弹层宽度，支持数字像素值或 CSS 长度。 */
   width?: number | string
   /** modal 高度或上下 drawer 高度。 */
@@ -175,7 +179,7 @@ export interface OverlayContext<T = unknown> {
   setConfirmHandler: (handler?: OverlayConfirmHandler<T>) => void
 }
 
-export type OverlayResolvedOptions = Required<Omit<OverlayOptions, 'actionClassName' | 'extra' | 'footer' | 'offset' | 'position' | 'radius' | 'to'>> & Pick<OverlayOptions, 'actionClassName' | 'extra' | 'footer' | 'offset' | 'position' | 'radius' | 'to'>
+export type OverlayResolvedOptions = Required<Omit<OverlayOptions, 'actionClassName' | 'ariaDescription' | 'ariaLabel' | 'extra' | 'footer' | 'offset' | 'position' | 'radius' | 'to'>> & Pick<OverlayOptions, 'actionClassName' | 'ariaDescription' | 'ariaLabel' | 'extra' | 'footer' | 'offset' | 'position' | 'radius' | 'to'>
 
 /** 组件式 Modal/Drawer 共用 props。 */
 export interface OverlayComponentProps extends Omit<OverlayOptions, 'type'> {}
